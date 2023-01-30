@@ -1,0 +1,14 @@
+syntax = "proto3";
+
+package grpc_status;
+
+option go_package = "github.com/lamber92/go-brick/berror";
+
+// Detail
+// Custom grpc.status.detail structure
+// Enable the gRPC client to parse the detailed error information returned by the server from grpc.status.detail
+message Detail {
+    int64               code     = 1;
+    string              message  = 2;
+    map<string, string> metadata = 3;
+}

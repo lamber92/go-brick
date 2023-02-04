@@ -40,7 +40,11 @@ type defaultStatus struct {
 // New
 // Create a defaultStatus object pointer
 func New(code int, reason string, detail interface{}) berror.Status {
-	return &defaultStatus{code, reason, detail}
+	return &defaultStatus{
+		code:   code,
+		reason: reason,
+		detail: detail,
+	}
 }
 
 func (c *defaultStatus) Code() int {
@@ -127,6 +131,22 @@ func RegisterInvalidArgument(code int, message string, detail interface{}) berro
 // because it is the http client that needs to obtain this custom error code.
 func RegisterNotFound(code int, message string, detail interface{}) berror.Status {
 	bcode.RegisterMapToGRPCCode(code, codes.NotFound)
+	st := &defaultStatus{
+		code:   code,
+		reason: message,
+		detail: detail,
+	}
+	internalCodeMapToStatus[code] = st
+	return st
+}
+
+// RegisterAlreadyExists
+// Register custom error status/code for resource already exists.
+// or overwrite the existing error code mapping relationship.
+// Notice: The http response body error code does not need to be mapped,
+// because it is the http client that needs to obtain this custom error code.
+func RegisterAlreadyExists(code int, message string, detail interface{}) berror.Status {
+	bcode.RegisterMapToGRPCCode(code, codes.AlreadyExists)
 	st := &defaultStatus{
 		code:   code,
 		reason: message,

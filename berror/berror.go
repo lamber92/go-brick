@@ -4,12 +4,13 @@ package berror
 
 // Error Provide the interface for feeding back business error info
 type Error interface {
-	Error() string                    // Output error information in string format
-	Status() Status                   // Get main status
-	WithSubStatus(Status) Error       // Carrying child status
-	SubStatus() Status                // Get child status
-	ListTracking(...int) []*TraceInfo // List the error tracking information that has been collected
-	Unwrap() error                    // Support Is() and As() functions
+	Error() string  // Output error information in string format
+	Status() Status // Get main status
+
+	Tracking(depth ...int) []*TraceInfo // List the error tracking information that has been collected
+
+	Wrap(subErr Error) // Wrap sub error
+	Unwrap() error     // Support Is() and As() functions
 }
 
 // Status Carrier of business error info

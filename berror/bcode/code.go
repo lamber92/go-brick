@@ -1,8 +1,8 @@
-package bstatus
+package bcode
 
 import "net/http"
 
-// Business error code preset value
+// Internal Error Code preset value
 // Note: It is filled with the value of http-status-code, which has nothing to do with the purpose of http-status-code
 const (
 	Unknown            = -1                             // -1:Unknown error
@@ -16,5 +16,5 @@ const (
 	InternalError      = http.StatusInternalServerError // 500:Internal server error
 	ServiceUnavailable = http.StatusServiceUnavailable  // 503:Service unavailable
 	GatewayTimeout     = http.StatusGatewayTimeout      // 504:Gateway timeout
-	AlreadyExists      = 10001                          // 10001:Resource already exists
+	AlreadyExists      = 614                            // 614:Resource already exists
 )

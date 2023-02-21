@@ -16,6 +16,31 @@ type defaultError struct {
 	stack  []uintptr // stack information when this object(*defaultError) was created
 }
 
+func (d defaultError) Error() string {
+	//TODO implement me
+	panic("implement me")
+}
+
+func (d defaultError) Status() Status {
+	//TODO implement me
+	panic("implement me")
+}
+
+func (d defaultError) Tracking(depth ...int) []*TraceInfo {
+	//TODO implement me
+	panic("implement me")
+}
+
+func (d defaultError) Wrap(subErr Error) {
+	//TODO implement me
+	panic("implement me")
+}
+
+func (d defaultError) Unwrap() error {
+	//TODO implement me
+	panic("implement me")
+}
+
 // newWithSkip
 // Create and return an error containing the stack trace.
 // @offset: offset stack depth

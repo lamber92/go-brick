@@ -56,6 +56,6 @@ func TestFindEmojiPrefix(t *testing.T) {
 		emoji, ok := bemoji.FindEmojiPrefix(v)
 		expected := testDataGroupResult[i]
 		assert.Equal(t, expected.OK, ok, "Expected results do not match actual results. [%v]", v)
-		t.Logf("expected: %v, actual: %v", expected.Emoji, emoji)
+		t.Logf("expected: %x, actual: %x", expected.Emoji, emoji)
 	}
 }

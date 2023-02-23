@@ -11,18 +11,18 @@ import (
 // Business Status preset value
 // If you need to add a custom status, you can get it through the NewStatus() method
 var (
-	StatusUnknown            = &defaultStatus{bcode.Unknown, "Unknown Error", nil}
-	StatusOK                 = &defaultStatus{bcode.OK, "Success", nil}
-	StatusInvalidArgument    = &defaultStatus{bcode.InvalidArgument, "Invalid Parameters", nil}
-	StatusUnauthorized       = &defaultStatus{bcode.Unauthorized, "Not Logged In", nil}
-	StatusForbidden          = &defaultStatus{bcode.Forbidden, "Request Denied", nil}
-	StatusNotFound           = &defaultStatus{bcode.NotFound, "Resource Not Found", nil}
-	StatusRequestTimeout     = &defaultStatus{bcode.RequestTimeout, "Request Timeout", nil}
-	StatusClientClosed       = &defaultStatus{bcode.ClientClosed, "Client Connection Closed", nil}
-	StatusInternalError      = &defaultStatus{bcode.InternalError, "Internal Server Error", nil}
-	StatusServiceUnavailable = &defaultStatus{bcode.ServiceUnavailable, "Service Unavailable", nil}
-	StatusGatewayTimeout     = &defaultStatus{bcode.GatewayTimeout, "Gateway Timeout", nil}
-	StatusAlreadyExists      = &defaultStatus{bcode.AlreadyExists, "Resource Already Exists", nil}
+	Unknown            = &defaultStatus{bcode.Unknown, "Unknown Error", nil}
+	OK                 = &defaultStatus{bcode.OK, "Success", nil}
+	InvalidArgument    = &defaultStatus{bcode.InvalidArgument, "Invalid Parameters", nil}
+	Unauthorized       = &defaultStatus{bcode.Unauthorized, "Not Logged In", nil}
+	Forbidden          = &defaultStatus{bcode.Forbidden, "Request Denied", nil}
+	NotFound           = &defaultStatus{bcode.NotFound, "Resource Not Found", nil}
+	RequestTimeout     = &defaultStatus{bcode.RequestTimeout, "Request Timeout", nil}
+	ClientClosed       = &defaultStatus{bcode.ClientClosed, "Client Connection Closed", nil}
+	InternalError      = &defaultStatus{bcode.InternalError, "Internal Server Error", nil}
+	ServiceUnavailable = &defaultStatus{bcode.ServiceUnavailable, "Service Unavailable", nil}
+	GatewayTimeout     = &defaultStatus{bcode.GatewayTimeout, "Gateway Timeout", nil}
+	AlreadyExists      = &defaultStatus{bcode.AlreadyExists, "Resource Already Exists", nil}
 )
 
 // =======================================
@@ -77,18 +77,18 @@ func (c *defaultStatus) String() string {
 // Registered internal error status container.
 // First register the internal error state as a preset value.
 var internalCodeMapToStatus = map[int]berror.Status{
-	bcode.Unknown:            StatusUnknown,
-	bcode.OK:                 StatusOK,
-	bcode.InvalidArgument:    StatusInvalidArgument,
-	bcode.Unauthorized:       StatusUnauthorized,
-	bcode.Forbidden:          StatusForbidden,
-	bcode.NotFound:           StatusNotFound,
-	bcode.RequestTimeout:     StatusRequestTimeout,
-	bcode.ClientClosed:       StatusClientClosed,
-	bcode.InternalError:      StatusInternalError,
-	bcode.ServiceUnavailable: StatusServiceUnavailable,
-	bcode.GatewayTimeout:     StatusGatewayTimeout,
-	bcode.AlreadyExists:      StatusAlreadyExists,
+	bcode.Unknown:            Unknown,
+	bcode.OK:                 OK,
+	bcode.InvalidArgument:    InvalidArgument,
+	bcode.Unauthorized:       Unauthorized,
+	bcode.Forbidden:          Forbidden,
+	bcode.NotFound:           NotFound,
+	bcode.RequestTimeout:     RequestTimeout,
+	bcode.ClientClosed:       ClientClosed,
+	bcode.InternalError:      InternalError,
+	bcode.ServiceUnavailable: ServiceUnavailable,
+	bcode.GatewayTimeout:     GatewayTimeout,
+	bcode.AlreadyExists:      AlreadyExists,
 }
 
 // RegisterMapFromCode
@@ -105,7 +105,7 @@ func GetByCode(code int) berror.Status {
 	if ok {
 		return e
 	}
-	return StatusUnknown
+	return Unknown
 }
 
 // RegisterInvalidArgument

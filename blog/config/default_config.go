@@ -1,4 +1,4 @@
-package blog
+package config
 
 import (
 	"io"
@@ -13,17 +13,31 @@ import (
 	"go.uber.org/zap/zapcore"
 )
 
-type defaultConfig struct {
+type ZapConfig struct {
 	Level      string   `json:"Level" yaml:"Level"`
 	Debug      bool     `json:"Debug" yaml:"Debug"`
 	Stacktrace string   `json:"Stacktrace" yaml:"Stacktrace"`
 	Encoding   string   `json:"Encoding" yaml:"Encoding"`
 	Output     []string `json:"Output" yaml:"Output"`
 	// file attr
-	FileAttr *configFileAttr `json:"FileAttr" yaml:"FileAttr"`
+	FileAttr *FileAttr `json:"FileAttr" yaml:"FileAttr"`
 }
 
-func (c *defaultConfig) getWriterSyncer() zapcore.WriteSyncer {
+func NewDefault() *ZapConfig {
+	return &ZapConfig{
+		Level:      "debug",
+		Debug:      true,
+		Stacktrace: "warn",
+		Encoding:   "json",
+		Output:     []string{"stdout"},
+	}
+}
+
+func LoadConfig() *ZapConfig {
+	return &ZapConfig{}
+}
+
+func (c *ZapConfig) GetWriterSyncer() zapcore.WriteSyncer {
 	var ws []zapcore.WriteSyncer
 	for _, v := range c.Output {
 		switch v {
@@ -41,7 +55,7 @@ func (c *defaultConfig) getWriterSyncer() zapcore.WriteSyncer {
 	return zapcore.NewMultiWriteSyncer(ws...)
 }
 
-func (c *defaultConfig) getZapLogLevel(lvl string) zapcore.LevelEnabler {
+func (c *ZapConfig) GetLogLevel(lvl string) zapcore.LevelEnabler {
 	atom := zap.DebugLevel
 	switch lvl {
 	case "debug":
@@ -62,38 +76,44 @@ func (c *defaultConfig) getZapLogLevel(lvl string) zapcore.LevelEnabler {
 	})
 }
 
-func (c *defaultConfig) getEncoder() zapcore.Encoder {
+func (c *ZapConfig) GetEncoder() zapcore.Encoder {
 	switch c.Encoding {
 	case "console":
-		return zapcore.NewConsoleEncoder(*c.buildZapEncodingConfig())
+		return zapcore.NewConsoleEncoder(*c.buildEncodingConfig())
 	case "json":
 		fallthrough
 	default:
-		return zapcore.NewJSONEncoder(*c.buildZapEncodingConfig())
+		return zapcore.NewJSONEncoder(*c.buildEncodingConfig())
 	}
 }
 
-func (c *defaultConfig) buildZapEncodingConfig() *zapcore.EncoderConfig {
+func (c *ZapConfig) buildEncodingConfig() *zapcore.EncoderConfig {
 	return &zapcore.EncoderConfig{
-		TimeKey:        "time",
-		LevelKey:       "level",
-		NameKey:        "default",
-		MessageKey:     "msg",
-		StacktraceKey:  "stacktrace",
+		TimeKey:     "time",
+		LevelKey:    "level",
+		NameKey:     "default",
+		FunctionKey: "func",
+		MessageKey:  "msg",
+		// Do not use the built-in stack trace, because in the access log scenario,
+		// the location where the log is output is different from the location where the error is generated,
+		// which will cause the output to nest too many intermediate layers.
+		// Use the berror.Tracking() instead.
+		// StacktraceKey:  "stacktrace",
 		LineEnding:     zapcore.DefaultLineEnding,
-		EncodeLevel:    zapcore.LowercaseLevelEncoder,
+		EncodeLevel:    zapcore.CapitalLevelEncoder,
 		EncodeTime:     zapcore.RFC3339TimeEncoder,
 		EncodeDuration: zapcore.MillisDurationEncoder,
+		EncodeCaller:   zapcore.ShortCallerEncoder,
 	}
 }
 
-type configFileAttr struct {
+type FileAttr struct {
 	Directory string `json:"Directory" yaml:"Directory"`
 	Name      string `json:"Name" yaml:"Name"`
 	MaxAge    string `json:"MaxAge" yaml:"MaxAge"`
 }
 
-func (attr *configFileAttr) getWriter() io.Writer {
+func (attr *FileAttr) getWriter() io.Writer {
 	if err := os.MkdirAll(attr.Directory, os.ModeDir|0755); err != nil {
 		log.Panicln(err)
 	}
@@ -112,7 +132,7 @@ func (attr *configFileAttr) getWriter() io.Writer {
 	return hook
 }
 
-func (attr *configFileAttr) getFileMaxAge() (time.Duration, error) {
+func (attr *FileAttr) getFileMaxAge() (time.Duration, error) {
 	if len(attr.MaxAge) == 0 {
 		return time.Hour * 24 * 7, nil
 	} else {

@@ -60,6 +60,7 @@ type TraceInfo struct {
 }
 
 // Tracking list the error tracking information that has been collected
+// TODO: Refer to this method to optimize: go.uber.org\zap@v1.24.0\stacktrace.go
 func (d *defaultError) Tracking(depth ...int) []*TraceInfo {
 	if d == nil || d.stack == nil || len(d.stack) == 0 {
 		return []*TraceInfo{}
@@ -153,6 +154,7 @@ func newWithSkip(err error, status bstatus.Status, offset int) Error {
 
 // callers
 // Get stack information ptr
+// TODO: Refer to this method to optimize: go.uber.org\zap@v1.24.0\stacktrace.go
 func callers(skip ...int) []uintptr {
 	var (
 		pcs [maxStackDepth]uintptr

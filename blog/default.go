@@ -3,6 +3,7 @@ package blog
 import (
 	"context"
 	"fmt"
+	"go-brick/blog/config"
 	"go-brick/btrace"
 
 	"go.uber.org/zap"
@@ -15,21 +16,14 @@ import (
 
 func newDefaultLogger(typ LoggerType) *defaultLogger {
 	// TODO：support load config file
-	conf := &defaultConfig{
-		Level:      "debug",
-		Debug:      true,
-		Stacktrace: "warn",
-		Encoding:   "json",
-		Output:     []string{"stdout"},
-	}
-
+	conf := config.NewDefault()
 	core := zapcore.NewTee(
-		zapcore.NewCore(conf.getEncoder(), conf.getWriterSyncer(), conf.getZapLogLevel(conf.Level)),
+		zapcore.NewCore(conf.GetEncoder(), conf.GetWriterSyncer(), conf.GetLogLevel(conf.Level)),
 	)
 	options := []zap.Option{
 		zap.AddCaller(),
-		zap.AddCallerSkip(2),
-		zap.AddStacktrace(conf.getZapLogLevel(conf.Stacktrace)),
+		zap.AddCallerSkip(1),
+		// zap.AddStacktrace(conf.GetLogLevel(conf.Stacktrace)),
 	}
 	if conf.Debug {
 		options = append(options, zap.Development())

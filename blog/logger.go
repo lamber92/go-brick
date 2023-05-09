@@ -1,7 +1,5 @@
 package blog
 
-import "context"
-
 var (
 	Access = newAccessLogger()
 	Biz    = newBizLogger()
@@ -24,10 +22,6 @@ func newAccessLogger() Logger {
 
 type accessLogger struct {
 	*defaultLogger
-}
-
-func (lgr *accessLogger) WithContext(ctx context.Context) Logger {
-	return nil
 }
 
 func replaceBizLogger(lgr Logger) {

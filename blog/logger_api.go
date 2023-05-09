@@ -7,9 +7,9 @@ import (
 type LoggerType string
 
 const (
-	TypeAccess LoggerType = "access"
-	TypeBiz    LoggerType = "biz"
-	TypeInfra  LoggerType = "infra"
+	TypeAccess LoggerType = "ACCESS"
+	TypeBiz    LoggerType = "BIZ"
+	TypeInfra  LoggerType = "INFRA"
 )
 
 type Logger interface {

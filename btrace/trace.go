@@ -3,20 +3,67 @@ package btrace
 import (
 	"context"
 	"encoding/hex"
-	"go-brick/bconst"
+	"go-brick/bcontext"
 
 	uuid "github.com/satori/go.uuid"
 	"github.com/spf13/cast"
 )
 
-// GenTraceID generate Tracking-ID
-func GenTraceID() string {
+const (
+	KeyTraceID = "b_trace_id"
+)
+
+type TraceIDGenerator interface {
+	// GenTraceID generate a Tracking-ID
+	GenTraceID() string
+}
+
+var traceIDGen = newUUIDV4Generator()
+
+// ReplaceTraceIDGenerator overrides the default Tracking-ID generator
+func ReplaceTraceIDGenerator(gen TraceIDGenerator) {
+	traceIDGen = gen
+}
+
+// uuidV4Generator uuid v4 version generator,
+// used as Tracking-ID generator
+type uuidV4Generator struct{}
+
+func newUUIDV4Generator() TraceIDGenerator {
+	return &uuidV4Generator{}
+}
+
+// GenTraceID generate a Tracking-ID
+func (*uuidV4Generator) GenTraceID() string {
 	return hex.EncodeToString(uuid.NewV4().Bytes())
 }
 
-// GetTraceID get Tracking-ID
+// GenTraceID generate a Tracking-ID
+func GenTraceID() string {
+	return traceIDGen.GenTraceID()
+}
+
+// SetTraceID set Tracking-ID into context.
+// if traceIDs is not passed in, a built-in new ID will be used.
+func SetTraceID(ctx context.Context, traceIDs ...string) context.Context {
+	var traceID string
+	if len(traceIDs) > 0 {
+		traceID = traceIDs[0]
+	} else {
+		traceID = traceIDGen.GenTraceID()
+	}
+
+	switch tmp := ctx.(type) {
+	case bcontext.Context:
+		return tmp.Set(KeyTraceID, traceID)
+	default:
+		return context.WithValue(ctx, KeyTraceID, traceID)
+	}
+}
+
+// GetTraceID get Tracking-ID from context
 func GetTraceID(ctx context.Context) string {
-	tmp := ctx.Value(bconst.KeyTraceID)
+	tmp := ctx.Value(KeyTraceID)
 	traceID, ok := tmp.(string)
 	if ok {
 		return traceID

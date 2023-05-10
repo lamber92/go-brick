@@ -6,10 +6,26 @@ var (
 	Infra  = newInfraLogger()
 )
 
+// ReplaceLogger replace all built-in logging engines
 func ReplaceLogger(lgr Logger) {
 	replaceAccessLogger(lgr)
 	replaceBizLogger(lgr)
 	replaceInfraLogger(lgr)
+}
+
+// Close disable all built-in logging engines
+func Close() (out []error) {
+	out = make([]error, 0, 3)
+	handle := func(err error) []error {
+		out = append(out, err)
+		return out
+	}
+
+	handle(Access.Close())
+	handle(Biz.Close())
+	handle(Infra.Close())
+
+	return out
 }
 
 func replaceAccessLogger(lgr Logger) {

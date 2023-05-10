@@ -31,13 +31,13 @@ var (
 // defaultStatus
 // Provide built-in error code carrier
 type defaultStatus struct {
-	code   bcode.Code  // error code
-	reason string      // Error reasons with business attributes. Usually used to return to the client as a prompt.
-	detail interface{} // A collection of real underlying error cause information
+	code   bcode.Code // error code
+	reason string     // Error reasons with business attributes. Usually used to return to the client as a prompt.
+	detail any        // A collection of real underlying error cause information
 }
 
 // New create a defaultStatus object pointer
-func New(code bcode.Code, reason string, detail interface{}) Status {
+func New(code bcode.Code, reason string, detail any) Status {
 	return &defaultStatus{
 		code:   code,
 		reason: reason,
@@ -53,7 +53,7 @@ func (c *defaultStatus) Reason() string {
 	return c.reason
 }
 
-func (c *defaultStatus) Detail() interface{} {
+func (c *defaultStatus) Detail() any {
 	return c.detail
 }
 

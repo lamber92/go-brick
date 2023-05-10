@@ -3,7 +3,9 @@ package blog
 import (
 	"context"
 	"fmt"
+	"go-brick/berror"
 	"go-brick/blog/config"
+	"go-brick/bstack"
 	"go-brick/btrace"
 
 	"go.uber.org/zap"
@@ -30,17 +32,22 @@ func newDefaultLogger(typ LoggerType) *defaultLogger {
 	}
 
 	return &defaultLogger{
+		loggerType: typ,
 		engine: zap.New(core, options...).
 			With(zap.String("type", string(typ))),
 	}
 }
 
 type defaultLogger struct {
-	engine *zap.Logger
+	loggerType LoggerType
+	engine     *zap.Logger
 }
 
 // WithContext parse the built-in information of the infrastructure in the context into log.
 func (d *defaultLogger) WithContext(ctx context.Context) Logger {
+	if ctx == nil {
+		return d
+	}
 	// A new pointer object must be used to store the engine
 	// to prevent polluting the original engine
 	return &defaultLogger{
@@ -50,13 +57,42 @@ func (d *defaultLogger) WithContext(ctx context.Context) Logger {
 
 // WithError parse the built-in information of the error into log.
 func (d *defaultLogger) WithError(err error) Logger {
-	// TODO implement me
-	panic("implement me")
+	if err == nil {
+		return d
+	}
+	// A new pointer object must be used to store the engine
+	// to prevent polluting the original engine
+	return &defaultLogger{
+		engine: d.engine.With(zap.Array("stack", btrace2.GetFromError(err, 5))),
+	}
+}
+
+// WithStack parse the built-in information of the stack into log.
+func (d *defaultLogger) WithStack(source any) Logger {
+	if source != nil {
+		return d
+	}
+	var stack bstack.StackList
+
+	switch tmp := source.(type) {
+	case berror.Error:
+		stack = tmp.Stack()
+	default:
+		stack = bstack.TakeStack(1, bstack.StacktraceMax)
+	}
+	// A new pointer object must be used to store the engine
+	// to prevent polluting the original engine
+	return &defaultLogger{
+		engine: d.engine.With(zap.Array("stack", stack)),
+	}
 }
 
 // With creates a child logger and adds structured context to it. Fields added
 // to the child don't affect the parent, and vice versa.
 func (d *defaultLogger) With(fields ...Field) Logger {
+	if len(fields) == 0 {
+		return d
+	}
 	// A new pointer object must be used to store the engine
 	// to prevent polluting the original engine
 	return &defaultLogger{
@@ -150,6 +186,14 @@ func (d *defaultLogger) Errorw(msg string, fields ...Field) {
 // variadic key-value pairs are treated as they are in With.
 func (d *defaultLogger) Panicw(msg string, fields ...Field) {
 	d.engine.Panic(msg, defaultFields{fields}.Release()...)
+}
+
+// Close close logger engine
+func (d *defaultLogger) Close() error {
+	if err := d.engine.Sync(); err != nil {
+		return berror.NewInternalError(err, fmt.Sprintf("failed to close log engine [%s]", d.loggerType))
+	}
+	return nil
 }
 
 // getMessage format with Sprint, Sprintf, or neither.

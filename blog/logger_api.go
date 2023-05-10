@@ -17,6 +17,8 @@ type Logger interface {
 	WithContext(ctx context.Context) Logger
 	// WithError parse the built-in information of the error into log.
 	WithError(err error) Logger
+	// WithStack parse the built-in information of the stack into log.
+	WithStack(source any) Logger
 	// With creates a child logger and adds structured context to it. Fields added
 	// to the child don't affect the parent, and vice versa.
 	With(fields ...Field) Logger
@@ -53,6 +55,8 @@ type Logger interface {
 	Warnw(msg string, fields ...Field)
 	Errorw(msg string, fields ...Field)
 	Panicw(msg string, fields ...Field)
+
+	Close() error
 }
 
 type Field interface{}

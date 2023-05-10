@@ -14,36 +14,36 @@ const (
 )
 
 type TraceIDGenerator interface {
-	// GenTraceID generate a Tracking-ID
+	// GenTraceID generate a Stack-ID
 	GenTraceID() string
 }
 
 var traceIDGen = newUUIDV4Generator()
 
-// ReplaceTraceIDGenerator overrides the default Tracking-ID generator
+// ReplaceTraceIDGenerator overrides the default Stack-ID generator
 func ReplaceTraceIDGenerator(gen TraceIDGenerator) {
 	traceIDGen = gen
 }
 
 // uuidV4Generator uuid v4 version generator,
-// used as Tracking-ID generator
+// used as Stack-ID generator
 type uuidV4Generator struct{}
 
 func newUUIDV4Generator() TraceIDGenerator {
 	return &uuidV4Generator{}
 }
 
-// GenTraceID generate a Tracking-ID
+// GenTraceID generate a Stack-ID
 func (*uuidV4Generator) GenTraceID() string {
 	return hex.EncodeToString(uuid.NewV4().Bytes())
 }
 
-// GenTraceID generate a Tracking-ID
+// GenTraceID generate a Stack-ID
 func GenTraceID() string {
 	return traceIDGen.GenTraceID()
 }
 
-// SetTraceID set Tracking-ID into context.
+// SetTraceID set Stack-ID into context.
 // if traceIDs is not passed in, a built-in new ID will be used.
 func SetTraceID(ctx context.Context, traceIDs ...string) context.Context {
 	var traceID string
@@ -61,7 +61,7 @@ func SetTraceID(ctx context.Context, traceIDs ...string) context.Context {
 	}
 }
 
-// GetTraceID get Tracking-ID from context
+// GetTraceID get Stack-ID from context
 func GetTraceID(ctx context.Context) string {
 	tmp := ctx.Value(KeyTraceID)
 	traceID, ok := tmp.(string)

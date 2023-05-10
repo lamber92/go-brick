@@ -32,7 +32,7 @@ func TestTraceID(t *testing.T) {
 
 type myGenerator struct{}
 
-// GenTraceID generate a Tracking-ID
+// GenTraceID generate a Stack-ID
 func (*myGenerator) GenTraceID() string {
 	return "test_" + hex.EncodeToString(uuid.NewV1().Bytes())
 }

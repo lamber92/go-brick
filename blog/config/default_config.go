@@ -97,7 +97,7 @@ func (c *ZapConfig) buildEncodingConfig() *zapcore.EncoderConfig {
 		// Do not use the built-in stack trace, because in the access log scenario,
 		// the location where the log is output is different from the location where the error is generated,
 		// which will cause the output to nest too many intermediate layers.
-		// Use the berror.Tracking() instead.
+		// Use the berror.Stack() instead.
 		// StacktraceKey:  "stacktrace",
 		LineEnding:     zapcore.DefaultLineEnding,
 		EncodeLevel:    zapcore.CapitalLevelEncoder,

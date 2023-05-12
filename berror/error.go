@@ -7,9 +7,8 @@ import (
 	"go-brick/bstack"
 
 	jsoniter "github.com/json-iterator/go"
+	"go.uber.org/zap/zapcore"
 )
-
-const maxStackDepth = 32
 
 var jsonStdIter = jsoniter.ConfigCompatibleWithStandardLibrary
 
@@ -111,6 +110,32 @@ func (d *defaultError) format() *summary {
 		sum.Next = next.Error()
 	}
 	return sum
+}
+
+// MarshalLogObject zapcore.ObjectMarshaler impl
+func (d *defaultError) MarshalLogObject(enc zapcore.ObjectEncoder) (err error) {
+	// code/reason
+	status := d.status
+	enc.AddInt("code", status.Code().ToInt())
+	enc.AddString("reason", status.Reason())
+	// detail
+	if status.Detail() != nil {
+		if obj, ok := status.Detail().(zapcore.ObjectMarshaler); ok {
+			_ = enc.AddObject("detail", obj)
+		} else {
+			_ = enc.AddReflected("detail", status.Detail())
+		}
+	}
+	// nest error
+	if d.err == nil {
+		return
+	}
+	if next, ok := d.err.(*defaultError); ok {
+		_ = enc.AddObject("next", next)
+		return
+	}
+	enc.AddString("next", d.err.Error())
+	return
 }
 
 // newWithSkip

@@ -62,8 +62,15 @@ func (d *defaultLogger) WithError(err error) Logger {
 	}
 	// A new pointer object must be used to store the engine
 	// to prevent polluting the original engine
-	return &defaultLogger{
-		engine: d.engine.With(zap.Array("stack", btrace2.GetFromError(err, 5))),
+	switch tmp := err.(type) {
+	case zapcore.ObjectMarshaler:
+		return &defaultLogger{
+			engine: d.engine.With(zap.Object("err", tmp)),
+		}
+	default:
+		return &defaultLogger{
+			engine: d.engine.With(zap.String("err", err.Error())),
+		}
 	}
 }
 
@@ -73,7 +80,6 @@ func (d *defaultLogger) WithStack(source any) Logger {
 		return d
 	}
 	var stack bstack.StackList
-
 	switch tmp := source.(type) {
 	case berror.Error:
 		stack = tmp.Stack()

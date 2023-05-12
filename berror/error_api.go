@@ -2,6 +2,7 @@ package berror
 
 import (
 	"go-brick/berror/bstatus"
+	"go-brick/bstack"
 )
 
 //go:generate protoc --go_out=. --go_opt=paths=source_relative --go-grpc_out=. --go-grpc_opt=paths=source_relative  --proto_path=. grpc_status_detail.proto
@@ -14,9 +15,11 @@ type Error interface {
 	Status() bstatus.Status
 	// Stack tracking list the error tracking information that has been collected.
 	Stack() bstack.StackList
+}
 
+type Warp interface {
 	// Wrap nest the specified error into error chain.
-	Wrap(err error) error
+	Wrap(error) error
 	// Unwrap returns the next error in the error chain.
 	Unwrap() error
 }

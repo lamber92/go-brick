@@ -24,3 +24,12 @@ func TestWrapAndUnwrap(t *testing.T) {
 		assert.Equal(t, targetErrors[i], tmp, i)
 	}
 }
+
+func TestStack(t *testing.T) {
+	err1 := errors.New("xxxx")
+	err2 := fmt.Errorf("err2. %w", err1)
+	err3 := berror.New(bstatus.InternalError, err2)
+	err4 := berror.New(bstatus.NotFound, err3)
+
+	t.Log(err4.Stack())
+}

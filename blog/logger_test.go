@@ -21,8 +21,8 @@ func TestAccessLog(t *testing.T) {
 	ctx := bcontext.New().Set(btrace.KeyTraceID, btrace.GenTraceID())
 	blog.Access.WithContext(ctx).Debug("test debug message.")
 	blog.Access.WithContext(ctx).Info("test info message.")
-	blog.Access.WithContext(ctx).WithError(err).Warn("test warn message.")
-	blog.Access.WithContext(ctx).WithError(err).Error("test error message.")
+	blog.Access.WithContext(ctx).WithError(err).WithStack(err).Warn("test warn message.")
+	blog.Access.WithContext(ctx).WithError(err).WithStack(err).Error("test error message.")
 	// blog.Access.WithContext(ctx).Panic("test panic message.")
 }
 

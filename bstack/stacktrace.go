@@ -1,8 +1,11 @@
 package bstack
 
 import (
+	"go-brick/internal/bufferpool"
+	"go-brick/internal/json"
 	"runtime"
 	"strconv"
+	"strings"
 	"sync"
 
 	"go.uber.org/zap/zapcore"
@@ -157,8 +160,42 @@ func (sf *stackFormatter) FormatStack(stack *stacktrace) {
 func (sf *stackFormatter) FormatFrame(frame runtime.Frame) {
 	sf.list = append(sf.list, &stackInfo{
 		Func: frame.Function,
-		File: frame.File + ":" + strconv.Itoa(frame.Line),
+		File: sf.TrimmedPath(frame.File),
+		Line: frame.Line,
 	})
+}
+
+// TrimmedPath returns a package/file:line description of the caller,
+// preserving only the leaf directory name and file name.
+func (sf *stackFormatter) TrimmedPath(file string) string {
+	// nb. To make sure we trim the path correctly on Windows too, we
+	// counter-intuitively need to use '/' and *not* os.PathSeparator here,
+	// because the path given originates from Go stdlib, specifically
+	// runtime.Caller() which (as of Mar/17) returns forward slashes even on
+	// Windows.
+	//
+	// See https://github.com/golang/go/issues/3335
+	// and https://github.com/golang/go/issues/18151
+	//
+	// for discussion on the issue on Go side.
+	//
+	// Find the last separator.
+	//
+	idx := strings.LastIndexByte(file, '/')
+	if idx == -1 {
+		return file
+	}
+	// Find the penultimate separator.
+	idx = strings.LastIndexByte(file[:idx], '/')
+	if idx == -1 {
+		return file
+	}
+	buf := bufferpool.Get()
+	// Keep everything after the penultimate separator.
+	buf.AppendString(file[idx+1:])
+	caller := buf.String()
+	buf.Free()
+	return caller
 }
 
 // stackInfo stack info
@@ -184,4 +221,9 @@ func (sl StackList) MarshalLogArray(enc zapcore.ArrayEncoder) (err error) {
 		}
 	}
 	return
+}
+
+func (sl StackList) Error() string {
+	out, _ := json.MarshalToString(sl)
+	return out
 }

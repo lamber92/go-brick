@@ -22,6 +22,8 @@ type defaultError struct {
 
 // New create and return an error containing a code and reason.
 // If the parameter 'err' is passed in, it will wrap err.
+// nb. Nesting again will result in inaccurate stack cheapness,
+// if necessary, use NewWithSkip instead.
 func New(status bstatus.Status, err ...error) Error {
 	e := &defaultError{
 		stack:  bstack.TakeStack(1, bstack.StacktraceMax),
@@ -138,10 +140,10 @@ func (d *defaultError) MarshalLogObject(enc zapcore.ObjectEncoder) (err error) {
 	return
 }
 
-// newWithSkip
+// NewWithSkip
 // create and return an error containing the stack trace.
 // @offset: offset stack depth
-func newWithSkip(err error, status bstatus.Status, skip int) Error {
+func NewWithSkip(err error, status bstatus.Status, skip int) Error {
 	return &defaultError{
 		err:    err,
 		status: status,
@@ -155,7 +157,7 @@ func NewInvalidArgument(err error, reason string, detail ...any) error {
 	if len(detail) > 0 {
 		ds = detail[0]
 	}
-	return New(bstatus.New(bcode.InvalidArgument, reason, ds), err)
+	return NewWithSkip(err, bstatus.New(bcode.InvalidArgument, reason, ds), 1)
 }
 
 // NewNotFound create a not found error
@@ -164,7 +166,7 @@ func NewNotFound(err error, reason string, detail ...any) error {
 	if len(detail) > 0 {
 		ds = detail[0]
 	}
-	return New(bstatus.New(bcode.NotFound, reason, ds), err)
+	return NewWithSkip(err, bstatus.New(bcode.NotFound, reason, ds), 1)
 }
 
 // NewInternalError create a internal error
@@ -173,5 +175,5 @@ func NewInternalError(err error, reason string, detail ...any) error {
 	if len(detail) > 0 {
 		ds = detail[0]
 	}
-	return New(bstatus.New(bcode.InternalError, reason, ds), err)
+	return NewWithSkip(err, bstatus.New(bcode.InternalError, reason, ds), 1)
 }

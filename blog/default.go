@@ -76,7 +76,7 @@ func (d *defaultLogger) WithError(err error) Logger {
 
 // WithStack parse the built-in information of the stack into log.
 func (d *defaultLogger) WithStack(source any) Logger {
-	if source != nil {
+	if source == nil {
 		return d
 	}
 	var stack bstack.StackList

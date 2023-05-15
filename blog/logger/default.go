@@ -1,4 +1,4 @@
-package blog
+package logger
 
 import (
 	"context"
@@ -16,11 +16,15 @@ import (
 // ----- Default Logger Engine IMPL ------
 // =======================================
 
-func newDefaultLogger(typ LoggerType) *defaultLogger {
+func newDefaultLogger(typ Type) *defaultLogger {
 	// TODO：support load config file
 	conf := config.NewDefault()
 	core := zapcore.NewTee(
-		zapcore.NewCore(conf.GetEncoder(), conf.GetWriterSyncer(), conf.GetLogLevel(conf.Level)),
+		zapcore.NewCore(
+			conf.GetEncoder(),
+			conf.GetWriterSyncer(),
+			conf.GetLogLevel(conf.Level),
+		),
 	)
 	options := []zap.Option{
 		zap.AddCaller(),
@@ -33,13 +37,12 @@ func newDefaultLogger(typ LoggerType) *defaultLogger {
 
 	return &defaultLogger{
 		loggerType: typ,
-		engine: zap.New(core, options...).
-			With(zap.String("type", string(typ))),
+		engine:     zap.New(core, options...).Named(string(typ)),
 	}
 }
 
 type defaultLogger struct {
-	loggerType LoggerType
+	loggerType Type
 	engine     *zap.Logger
 }
 
@@ -102,7 +105,15 @@ func (d *defaultLogger) With(fields ...Field) Logger {
 	// A new pointer object must be used to store the engine
 	// to prevent polluting the original engine
 	return &defaultLogger{
-		engine: d.engine.With(defaultFields{fields}.Release()...),
+		engine: d.engine.With(defaultFields(fields).Release()...),
+	}
+}
+
+// WithOptions clones the current Logger, applies the supplied Options, and
+// returns the resulting Logger. It's safe to use concurrently.
+func (d *defaultLogger) WithOptions(options ...Option) Logger {
+	return &defaultLogger{
+		engine: d.engine.WithOptions(defaultOptions(options).Release()...),
 	}
 }
 
@@ -166,32 +177,32 @@ func (d *defaultLogger) Panicf(format string, a ...any) {
 // Debugw logs a message with some additional context. The variadic key-value
 // pairs are treated as they are in With.
 func (d *defaultLogger) Debugw(msg string, fields ...Field) {
-	d.engine.Debug(msg, defaultFields{fields}.Release()...)
+	d.engine.Debug(msg, defaultFields(fields).Release()...)
 }
 
 // Infow logs a message with some additional context. The variadic key-value
 // pairs are treated as they are in With.
 func (d *defaultLogger) Infow(msg string, fields ...Field) {
-	d.engine.Info(msg, defaultFields{fields}.Release()...)
+	d.engine.Info(msg, defaultFields(fields).Release()...)
 }
 
 // Warnw logs a message with some additional context. The variadic key-value
 // pairs are treated as they are in With.
 func (d *defaultLogger) Warnw(msg string, fields ...Field) {
-	d.engine.Warn(msg, defaultFields{fields}.Release()...)
+	d.engine.Warn(msg, defaultFields(fields).Release()...)
 
 }
 
 // Errorw logs a message with some additional context. The variadic key-value
 // pairs are treated as they are in With.
 func (d *defaultLogger) Errorw(msg string, fields ...Field) {
-	d.engine.Error(msg, defaultFields{fields}.Release()...)
+	d.engine.Error(msg, defaultFields(fields).Release()...)
 }
 
 // Panicw logs a message with some additional context, then panics. The
 // variadic key-value pairs are treated as they are in With.
 func (d *defaultLogger) Panicw(msg string, fields ...Field) {
-	d.engine.Panic(msg, defaultFields{fields}.Release()...)
+	d.engine.Panic(msg, defaultFields(fields).Release()...)
 }
 
 // Close close logger engine
@@ -219,15 +230,15 @@ func getMessage(template string, fmtArgs []interface{}) string {
 }
 
 // =======================================
-// ------ Default Logger Field IMPL ------
+// ------ Default Field Field IMPL -------
 // =======================================
 
 type defaultFields []Field
 
-func (fs defaultFields) Release() []zap.Field {
-	out := make([]zap.Field, 0, len(fs))
-	for _, v := range fs {
-		out = append(out, v.(zap.Field))
+func (df defaultFields) Release() []zapcore.Field {
+	out := make([]zap.Field, 0, len(df))
+	for _, v := range df {
+		out = append(out, v.(zapcore.Field))
 	}
 	return out
 }
@@ -238,7 +249,7 @@ func (fs defaultFields) Release() []zap.Field {
 // zap's JSON encoder base64-encodes binary blobs. To log UTF-8 encoded text,
 // use ByteString.
 func Binary(key string, val []byte) Field {
-	return zap.Any(key, val)
+	return zap.Binary(key, val)
 }
 
 // ByteString constructs a field that carries UTF-8 encoded text as a []byte.
@@ -263,4 +274,24 @@ func ByteStrings(key string, val [][]byte) Field {
 // values are treated as uint8, and runes are always treated as integers.
 func Any(key string, value any) Field {
 	return zap.Any(key, value)
+}
+
+// =======================================
+// ------ Default Option Field IMPL ------
+// =======================================
+
+type defaultOptions []Option
+
+func (do defaultOptions) Release() []zap.Option {
+	out := make([]zap.Option, 0, len(do))
+	for _, v := range do {
+		out = append(out, v.(zap.Option))
+	}
+	return out
+}
+
+// AddCallerSkip increases the number of callers skipped by caller annotation
+// (as enabled by the AddCaller option).
+func AddCallerSkip(skip int) Option {
+	return zap.AddCallerSkip(skip)
 }

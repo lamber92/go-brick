@@ -13,7 +13,7 @@ func New(code int) Code {
 }
 
 // internal Error Code preset value
-// Note: it is filled with the value of http-status-code, which has nothing to do with the purpose of http-status-code
+// nb. it is filled with the value of http-status-code, which has nothing to do with the purpose of http-status-code
 const (
 	Unknown            defaultCode = -1                             // -1:Unknown error
 	OK                 defaultCode = 0                              // 200:Success

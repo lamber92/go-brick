@@ -1,15 +1,15 @@
-package blog
+package logger
 
 import (
 	"context"
 )
 
-type LoggerType string
+type Type string
 
 const (
-	TypeAccess LoggerType = "ACCESS"
-	TypeBiz    LoggerType = "BIZ"
-	TypeInfra  LoggerType = "INFRA"
+	TypeAccess Type = "ACCESS"
+	TypeBiz    Type = "BIZ"
+	TypeInfra  Type = "INFRA"
 )
 
 type Logger interface {
@@ -22,6 +22,9 @@ type Logger interface {
 	// With creates a child logger and adds structured context to it. Fields added
 	// to the child don't affect the parent, and vice versa.
 	With(fields ...Field) Logger
+	// WithOptions clones the current Logger, applies the supplied Options, and
+	// returns the resulting Logger. It's safe to use concurrently.
+	WithOptions(...Option) Logger
 
 	// Debug logs a message at DebugLevel. The message includes any fields passed
 	// at the log site, as well as any fields accumulated on the logger.
@@ -60,3 +63,5 @@ type Logger interface {
 }
 
 type Field interface{}
+
+type Option interface{}

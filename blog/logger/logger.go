@@ -1,4 +1,4 @@
-package blog
+package logger
 
 var (
 	Access = newAccessLogger()
@@ -6,8 +6,8 @@ var (
 	Infra  = newInfraLogger()
 )
 
-// ReplaceLogger replace all built-in logging engines
-func ReplaceLogger(lgr Logger) {
+// Replace replace all built-in logging engines
+func Replace(lgr Logger) {
 	replaceAccessLogger(lgr)
 	replaceBizLogger(lgr)
 	replaceInfraLogger(lgr)

@@ -91,7 +91,7 @@ func (c *ZapConfig) buildEncodingConfig() *zapcore.EncoderConfig {
 	return &zapcore.EncoderConfig{
 		TimeKey:     "time",
 		LevelKey:    "level",
-		NameKey:     "default",
+		NameKey:     "type",
 		FunctionKey: "func",
 		MessageKey:  "msg",
 		// Do not use the built-in stack trace, because in the access log scenario,

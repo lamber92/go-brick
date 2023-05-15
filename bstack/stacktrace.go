@@ -148,7 +148,7 @@ func (sf *stackFormatter) Stack() StackList {
 // FormatStack formats all remaining frames in the provided stacktrace -- minus
 // the final runtime.main/runtime.goexit frame.
 func (sf *stackFormatter) FormatStack(stack *stacktrace) {
-	// Note: On the last iteration, frames.Next() returns false, with a valid
+	// nb. On the last iteration, frames.Next() returns false, with a valid
 	// frame, but we ignore this frame. The last frame is a runtime frame which
 	// adds noise, since it's only either runtime.main or runtime.goexit.
 	for frame, more := stack.Next(); more; frame, more = stack.Next() {
@@ -160,7 +160,7 @@ func (sf *stackFormatter) FormatStack(stack *stacktrace) {
 func (sf *stackFormatter) FormatFrame(frame runtime.Frame) {
 	sf.list = append(sf.list, &stackInfo{
 		Func: frame.Function,
-		File: sf.TrimmedPath(frame.File),
+		File: frame.File,
 		Line: frame.Line,
 	})
 }
@@ -200,9 +200,9 @@ func (sf *stackFormatter) TrimmedPath(file string) string {
 
 // stackInfo stack info
 type stackInfo struct {
-	Func string // function name
-	File string // file name
-	Line int    // line no
+	Func string `json:"func"` // function name
+	File string `json:"file"` // file name
+	Line int    `json:"line"` // line no
 }
 
 func (s *stackInfo) MarshalLogObject(enc zapcore.ObjectEncoder) error {

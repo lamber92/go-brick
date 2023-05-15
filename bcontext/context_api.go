@@ -16,7 +16,7 @@ type Context interface {
 	// returns 'false' if the original context does not exist
 	GetOrigCtx() (context.Context, bool)
 	// Set store key-value pairs
-	Set(key string, value any)
+	Set(key string, value any) Context
 	// Get fetch the stored value by key
 	Get(key string) (value any, exists bool)
 

@@ -64,10 +64,11 @@ func (ctx *defaultContext) GetOrigCtx() (context.Context, bool) {
 	return nil, false
 }
 
-func (ctx *defaultContext) Set(key string, value any) {
+func (ctx *defaultContext) Set(key string, value any) Context {
 	ctx.Lock()
 	ctx.kv[key] = value
 	ctx.Unlock()
+	return ctx
 }
 
 func (ctx *defaultContext) Get(key string) (value any, exists bool) {

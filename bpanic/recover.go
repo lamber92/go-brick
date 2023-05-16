@@ -1,10 +1,12 @@
-package berror
+package bpanic
 
 import (
 	"errors"
 	"fmt"
+	"go-brick/berror"
 	"go-brick/berror/bcode"
 	"go-brick/berror/bstatus"
+	"go-brick/blog/logger"
 	"net"
 	"os"
 	"strings"
@@ -25,12 +27,20 @@ func Recover(hook func(error)) {
 	}
 }
 
+func SimpleHook(err error) {
+	logger.Infra.WithError(err).WithStack(err).Error("recover simple hook")
+}
+
 // defaultIdentify the default processing method for identifying panic reasons
 func defaultIdentify(r any, hook func(error)) {
 	var (
 		err    error
 		status bstatus.Status
 	)
+	if hook == nil {
+		hook = SimpleHook
+	}
+
 	switch tmp := r.(type) {
 	// borrowed from github.com\gin-gonic\gin@v1.7.1\recovery.go
 	// ignore specific network errors
@@ -57,6 +67,6 @@ func defaultIdentify(r any, hook func(error)) {
 		status = bstatus.New(bcode.InternalError, recoverReason, fmt.Sprintf(".(type)=%T", tmp))
 	}
 	// convert to internal error and skip stacktrace layer
-	err = NewWithSkip(err, status, 3)
+	err = berror.NewWithSkip(err, status, 3)
 	hook(err)
 }

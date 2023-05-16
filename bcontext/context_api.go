@@ -10,6 +10,8 @@ import (
 type Context interface {
 	// WithTimeout override context timeout
 	WithTimeout(timeout time.Duration)
+	// WithCancel override context timeout/cancel
+	WithCancel()
 	// Cancel trigger context timeout early
 	Cancel()
 	// GetOrigCtx get original context

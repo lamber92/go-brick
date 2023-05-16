@@ -126,6 +126,32 @@ func TestNewWithCtxTimeout(t *testing.T) {
 	assert.Condition(t, compareFunc5)
 }
 
+func TestWithCancel(t *testing.T) {
+	ctx := context.Background()
+	ctx2, cancel2 := context.WithCancel(ctx)
+	ctx3 := bcontext.NewWithCtx(ctx2)
+	ctx3.WithCancel()
+
+	time.Sleep(time.Second)
+	cancel2()
+
+	timer := time.NewTimer(time.Minute)
+	defer timer.Stop()
+
+	go func() {
+		t.Logf("[%s] cancel ctx after 3 seconds", time.Now().Format(time.RFC3339))
+		time.Sleep(time.Second * 5)
+		ctx3.Cancel()
+	}()
+
+	select {
+	case <-timer.C:
+		t.Logf("[%s] timeout", time.Now().Format(time.RFC3339))
+	case <-ctx3.Done():
+		t.Logf("[%s] bcontext cancel done", time.Now().Format(time.RFC3339))
+	}
+}
+
 func TestCtxValue(t *testing.T) {
 	ctx := context.Background()
 

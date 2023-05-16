@@ -34,14 +34,28 @@ func NewWithCtx(ctx context.Context) Context {
 	return out
 }
 
-// WithTimeout override context timeout
+// WithTimeout override context timeout/cancel
 func (ctx *defaultContext) WithTimeout(timeout time.Duration) {
 	ctx.Lock()
 	defer ctx.Unlock()
-	origTimer, origCancel := ctx.timer, ctx.cancel
+	_, origCancel := ctx.timer, ctx.cancel
 	// reset timeout
 	ctx.timer, ctx.cancel = context.WithTimeout(context.Background(), timeout)
-	if origTimer.Err() == nil {
+	if origCancel != nil {
+		// release original timer
+		origCancel()
+	}
+	return
+}
+
+// WithCancel override context timeout/cancel
+func (ctx *defaultContext) WithCancel() {
+	ctx.Lock()
+	defer ctx.Unlock()
+	_, origCancel := ctx.timer, ctx.cancel
+	// reset timeout
+	ctx.timer, ctx.cancel = context.WithCancel(context.Background())
+	if origCancel != nil {
 		// release original timer
 		origCancel()
 	}
@@ -110,7 +124,7 @@ func (ctx *defaultContext) Value(key any) any {
 	ctx.RLock()
 	defer ctx.RUnlock()
 	if strKey, ok := key.(string); ok {
-		if val, exist := ctx.Get(strKey); exist {
+		if val, exist := ctx.kv[strKey]; exist {
 			return val
 		}
 	}

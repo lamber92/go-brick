@@ -1,7 +1,6 @@
 package berror
 
 import (
-	"errors"
 	"go-brick/berror/bcode"
 	"go-brick/berror/bstatus"
 	"go-brick/bstack"
@@ -21,16 +20,49 @@ type defaultError struct {
 }
 
 // New create and return an error containing a code and reason.
-// If the parameter 'err' is passed in, it will wrap err.
-// nb. Nesting again will result in inaccurate stack cheapness,
+// if the parameter 'err' is passed in, it will wrap err.
+//
+// nb 1. nesting call this function may create inaccurate stack cheapness,
 // if necessary, use NewWithSkip instead.
+//
+// nb 2. if @err type is *defaultError,
+// the @err stack will be inherited.
 func New(status bstatus.Status, err ...error) Error {
-	e := &defaultError{
-		stack:  bstack.TakeStack(1, bstack.StacktraceMax),
-		status: status,
-	}
+	e := &defaultError{status: status}
+	// check original err and try to inherit err-stack
 	if len(err) > 0 {
 		e.err = err[0]
+		if orig, ok := e.err.(*defaultError); ok {
+			e.stack = orig.stack
+		}
+	}
+	// generate new stack info
+	if e.stack == nil {
+		e.stack = bstack.TakeStack(1, bstack.StacktraceMax)
+	}
+	return e
+}
+
+// NewWithSkip create and return an error containing the stack trace.
+// @offset: offset stack depth
+//
+// nb. if @err type is *defaultError,
+// the @err stack will be inherited.
+func NewWithSkip(err error, status bstatus.Status, skip int) Error {
+	e := &defaultError{
+		err:    err,
+		status: status,
+	}
+	// check original err and try to inherit err-stack
+	if err != nil {
+		e.err = err
+		if orig, ok := e.err.(*defaultError); ok {
+			e.stack = orig.stack
+		}
+	}
+	// generate new stack info
+	if e.stack == nil {
+		e.stack = bstack.TakeStack(skip+1, bstack.StacktraceMax)
 	}
 	return e
 }
@@ -60,33 +92,20 @@ func (d *defaultError) Stack() bstack.StackList {
 	return d.stack
 }
 
-// Wrap nest the specified error into error chain.
-// Notice: will overwrite the original internal error
-func (d *defaultError) Wrap(err error) error {
-	if d == nil {
-		return nil
-	}
-	d.err = err
-	return d
-}
-
-// Unwrap returns the next error in the error chain.
-func (d *defaultError) Unwrap() error {
+// Cause returns the underlying cause of the error, if possible.
+func (d *defaultError) Cause() error {
 	if d == nil {
 		return nil
 	}
 	return d.err
 }
 
-// Is reports whether any error in error chain matches target.
-func (d *defaultError) Is(target error) bool {
-	return errors.Is(d, target)
-}
-
-// As finds the first error in error chain that matches target, and if one is found, sets
-// target to that error value and returns true. Otherwise, it returns false.
-func (d *defaultError) As(target any) bool {
-	return errors.As(d, target)
+// Unwrap provides compatibility for Go 1.13 error chains.
+func (d *defaultError) Unwrap() error {
+	if d == nil {
+		return nil
+	}
+	return d.err
 }
 
 type summary struct {
@@ -105,11 +124,15 @@ func (d *defaultError) format() *summary {
 		Reason: d.status.Reason(),
 		Detail: d.status.Detail(),
 	}
-	switch next := d.err.(type) {
-	case *defaultError:
-		sum.Next = next.format()
-	default:
-		sum.Next = next.Error()
+	if d.err == nil {
+		sum.Next = nil
+	} else {
+		switch next := d.err.(type) {
+		case *defaultError:
+			sum.Next = next.format()
+		default:
+			sum.Next = next.Error()
+		}
 	}
 	return sum
 }
@@ -138,17 +161,6 @@ func (d *defaultError) MarshalLogObject(enc zapcore.ObjectEncoder) (err error) {
 	}
 	enc.AddString("next", d.err.Error())
 	return
-}
-
-// NewWithSkip
-// create and return an error containing the stack trace.
-// @offset: offset stack depth
-func NewWithSkip(err error, status bstatus.Status, skip int) Error {
-	return &defaultError{
-		err:    err,
-		status: status,
-		stack:  bstack.TakeStack(skip+1, bstack.StacktraceMax),
-	}
 }
 
 // NewInvalidArgument create a invalid argument error

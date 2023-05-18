@@ -33,6 +33,8 @@ func NewDefault() *ZapConfig {
 	}
 }
 
+// TODO: 加入到可读取配置文件获取日志配置
+
 func LoadConfig() *ZapConfig {
 	return &ZapConfig{}
 }

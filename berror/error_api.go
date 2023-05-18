@@ -17,9 +17,9 @@ type Error interface {
 	Stack() bstack.StackList
 }
 
-type Warp interface {
-	// Wrap nest the specified error into error chain.
-	Wrap(error) error
-	// Unwrap returns the next error in the error chain.
+type Chain interface {
+	// Cause returns the underlying cause of the error, if possible.
+	Cause() error
+	// Unwrap provides compatibility for Go 1.13 error chains.
 	Unwrap() error
 }

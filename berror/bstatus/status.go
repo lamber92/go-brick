@@ -109,9 +109,9 @@ func GetByCode(code bcode.Code) Status {
 // RegisterInvalidArgument
 // Register custom error status/code for invalid parameters.
 // or overwrite the existing error code mapping relationship.
-// Notice: The http response body error code does not need to be mapped,
+// nb. The http response body error code does not need to be mapped,
 // because it is the http client that needs to obtain this custom error code.
-func RegisterInvalidArgument(code bcode.Code, message string, detail interface{}) Status {
+func RegisterInvalidArgument(code bcode.Code, message string, detail any) Status {
 	bcode.RegisterMapToGRPCCode(code, codes.InvalidArgument)
 	st := &defaultStatus{
 		code:   code,
@@ -125,9 +125,9 @@ func RegisterInvalidArgument(code bcode.Code, message string, detail interface{}
 // RegisterNotFound
 // Register custom error status/code for resource not found.
 // or overwrite the existing error code mapping relationship.
-// Notice: The http response body error code does not need to be mapped,
+// nb. The http response body error code does not need to be mapped,
 // because it is the http client that needs to obtain this custom error code.
-func RegisterNotFound(code bcode.Code, message string, detail interface{}) Status {
+func RegisterNotFound(code bcode.Code, message string, detail any) Status {
 	bcode.RegisterMapToGRPCCode(code, codes.NotFound)
 	st := &defaultStatus{
 		code:   code,
@@ -141,9 +141,9 @@ func RegisterNotFound(code bcode.Code, message string, detail interface{}) Statu
 // RegisterAlreadyExists
 // Register custom error status/code for resource already exists.
 // or overwrite the existing error code mapping relationship.
-// Notice: The http response body error code does not need to be mapped,
+// nb. The http response body error code does not need to be mapped,
 // because it is the http client that needs to obtain this custom error code.
-func RegisterAlreadyExists(code bcode.Code, message string, detail interface{}) Status {
+func RegisterAlreadyExists(code bcode.Code, message string, detail any) Status {
 	bcode.RegisterMapToGRPCCode(code, codes.AlreadyExists)
 	st := &defaultStatus{
 		code:   code,
@@ -157,9 +157,9 @@ func RegisterAlreadyExists(code bcode.Code, message string, detail interface{}) 
 // RegisterInternalError
 // Register custom error status/code for internal error.
 // or overwrite the existing error code mapping relationship.
-// Notice: The http response body error code does not need to be mapped,
+// nb. The http response body error code does not need to be mapped,
 // because it is the http client that needs to obtain this custom error code.
-func RegisterInternalError(code bcode.Code, message string, detail interface{}) Status {
+func RegisterInternalError(code bcode.Code, message string, detail any) Status {
 	bcode.RegisterMapToGRPCCode(code, codes.Internal)
 	st := &defaultStatus{
 		code:   code,

@@ -5,7 +5,6 @@ import (
 	"go-brick/bcontext"
 	"go-brick/berror"
 	"go-brick/blog"
-	"go-brick/blog/logger"
 	"go-brick/btrace"
 	"testing"
 )
@@ -49,13 +48,13 @@ func TestWithField(t *testing.T) {
 		blog.ByteStrings("bstrs", [][]byte{{97}, {98}}),
 		blog.Any("any", []byte{97, 98}))
 	// {"level":"DEBUG","time":"2023-05-15T15:40:12+08:00","type":"BIZ","func":"go-brick/blog_test.TestWithField","msg":"test with field","trace_id":"29e38f4e13cc48a8826323adbc611073","b":"YWI=","bstr":"ab","bstrs":["a","b"],"any":"YWI="}
-	blog.Infow(ctx, "test with field", logger.Any("any", string([]byte{97, 98})))
+	blog.Infow(ctx, "test with field", blog.Any("any", string([]byte{97, 98})))
 	// {"level":"INFO","time":"2023-05-15T15:40:12+08:00","type":"BIZ","func":"go-brick/blog_test.TestWithField","msg":"test with field","trace_id":"29e38f4e13cc48a8826323adbc611073","any":"ab"}
 	type Name struct {
 		FirstName string
 		LastName  string
 	}
 	name := Name{FirstName: "Lamber", LastName: "Chen"}
-	blog.Infow(ctx, "test with field", logger.Any("name", name))
+	blog.Infow(ctx, "test with field", blog.Any("name", name))
 	// {"level":"INFO","time":"2023-05-15T15:40:12+08:00","type":"BIZ","func":"go-brick/blog_test.TestWithField","msg":"test with field","trace_id":"29e38f4e13cc48a8826323adbc611073","name":{"FirstName":"Lamber","LastName":"Chen"}}
 }

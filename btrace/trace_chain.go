@@ -1,0 +1,131 @@
+package btrace
+
+import (
+	"go-brick/internal/bufferpool"
+	bsync "go-brick/internal/sync"
+	"sync"
+
+	"go.uber.org/zap/zapcore"
+)
+
+type Module string
+
+type Chain interface {
+	// Append append metadata to the end of the chain
+	Append(...Metadata)
+	// Get get metadata chain
+	Get() MetadataList
+	// Clear clear the metadata chain
+	Clear()
+	// String formatted output
+	String() string
+}
+
+type Metadata interface {
+	// Module return the name of the module to which the metadata belongs
+	Module() Module
+	// String formatted output
+	String() string
+}
+
+type MetadataList []Metadata
+
+func (mdl MetadataList) MarshalLogArray(enc zapcore.ArrayEncoder) (err error) {
+	for _, s := range mdl {
+		if x, ok := s.(interface {
+			MarshalLogObject(zapcore.ObjectEncoder) error
+		}); ok {
+			_ = enc.AppendObject(x)
+			continue
+		}
+		_ = enc.AppendReflected(s)
+	}
+	return
+}
+
+func NewChain() Chain {
+	return &defaultChain{
+		chain:  make([]Metadata, 0),
+		Locker: bsync.NewSpinLock(),
+	}
+}
+
+type defaultChain struct {
+	chain []Metadata
+	sync.Locker
+}
+
+func (d *defaultChain) Append(metadata ...Metadata) {
+	d.Lock()
+	d.chain = append(d.chain, metadata...)
+	d.Unlock()
+}
+
+func (d *defaultChain) Get() MetadataList {
+	d.Lock()
+	out := make([]Metadata, 0, len(d.chain))
+	out = append(out, d.chain...)
+	d.Unlock()
+	return out
+}
+
+func (d *defaultChain) Clear() {
+	d.Lock()
+	d.chain = make([]Metadata, 0)
+	d.Unlock()
+}
+
+func (d *defaultChain) String() string {
+	d.Lock()
+	buff := bufferpool.Get()
+	for idx, v := range d.chain {
+		buff.AppendByte('[')
+		buff.AppendInt(int64(idx + 1))
+		buff.AppendByte(']')
+		buff.AppendByte('{')
+		buff.AppendString(v.String())
+		buff.AppendByte('}')
+		if idx+1 < len(d.chain) {
+			buff.AppendString(" --> ")
+		}
+	}
+	out := buff.String()
+	buff.Free()
+	d.Unlock()
+	return out
+}
+
+func NewMD(mod Module, val string) Metadata {
+	return &defaultMD{
+		module: mod,
+		value:  val,
+	}
+}
+
+type defaultMD struct {
+	module Module
+	value  string
+}
+
+func (d *defaultMD) Module() Module {
+	return d.module
+}
+
+func (d *defaultMD) String() string {
+	buff := bufferpool.Get()
+	buff.AppendString("module: ")
+	buff.AppendString(string(d.module))
+	buff.AppendByte(',')
+	buff.AppendByte(' ')
+	buff.AppendString("value: ")
+	buff.AppendString(d.value)
+	out := buff.String()
+	buff.Free()
+	return out
+}
+
+func (d *defaultMD) MarshalLogObject(enc zapcore.ObjectEncoder) error {
+	enc.AddString("module", string(d.module))
+	enc.AddString("value", d.value)
+	return nil
+}

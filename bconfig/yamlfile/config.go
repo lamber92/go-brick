@@ -103,7 +103,7 @@ func (f *yamlFile) DynamicLoad(ctx context.Context, key string, filenames ...str
 	}
 	// run watcher
 	newData.OnConfigChange(func(in fsnotify.Event) {
-		logger.Infra.Infow("[EVENT] config change", "event", in.String())
+		logger.Infra.Infow("[EVENT] config change", logger.NewField().Any("event", in.String()))
 	})
 	newData.WatchConfig()
 

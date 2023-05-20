@@ -62,6 +62,4 @@ type Logger interface {
 	Close() error
 }
 
-type Field interface{}
-
 type Option interface{}

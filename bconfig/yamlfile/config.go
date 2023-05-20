@@ -7,6 +7,7 @@ import (
 	"go-brick/berror"
 	"go-brick/blog/logger"
 	"go-brick/internal/bufferpool"
+	bsync "go-brick/internal/sync"
 	"os"
 	"sync"
 
@@ -32,14 +33,16 @@ var _config = newDefault()
 
 func newDefault() *yamlFile {
 	return &yamlFile{
-		static:  sync.Map{},
-		dynamic: sync.Map{},
+		static:      sync.Map{},
+		dynamic:     sync.Map{},
+		dynamicLock: bsync.NewSpinLock(),
 	}
 }
 
 type yamlFile struct {
-	static  sync.Map // map[filename]config
-	dynamic sync.Map // map[filename]config
+	static      sync.Map // map[filename]config
+	dynamic     sync.Map // map[filename]config
+	dynamicLock sync.Locker
 }
 
 func (f *yamlFile) StaticLoad(key string, filenames ...string) (bconfig.Value, error) {
@@ -76,14 +79,20 @@ func (f *yamlFile) DynamicLoad(ctx context.Context, key string, filenames ...str
 	}
 
 	// try to get from cache
-	cache, ok := f.static.Load(filename)
+	cache, ok := f.dynamic.Load(filename)
 	if ok {
 		return f.getSub(cache.(*viper.Viper), key)
 	}
-
-	// TODO: 加原子锁。堵塞等待获取解锁。解锁后再次读缓存。
-	// Load()到这里的时间间隙很短，忽略多次读同一个文件的情况。
-
+	// the time gap between Load() and here is very short.
+	// ignore the fact that another thread has completed the execution of this method in this gap,
+	// resulting in multiple readings of the same file and running multiple watchers.
+	f.dynamicLock.Lock()
+	defer f.dynamicLock.Unlock()
+	// try again, possibly another thread has already read the configuration and cached it.
+	cache, ok = f.dynamic.Load(filename)
+	if ok {
+		return f.getSub(cache.(*viper.Viper), key)
+	}
 	// read config file
 	newData, err := f.loadFile(filename, true)
 	if err != nil {
@@ -92,16 +101,15 @@ func (f *yamlFile) DynamicLoad(ctx context.Context, key string, filenames ...str
 	if newData == nil {
 		return nil, f.notfoundError(key)
 	}
-
 	// run watcher
-	newData.WatchConfig()
 	newData.OnConfigChange(func(in fsnotify.Event) {
-		logger.Infra.Infow("[EVENT] config update", "event", in.String())
+		logger.Infra.Infow("[EVENT] config change", "event", in.String())
 	})
+	newData.WatchConfig()
 
 	// cache config
 	// do not check key is existing or not
-	f.static.Store(filename, newData)
+	f.dynamic.Store(filename, newData)
 
 	return f.getSub(newData, key)
 }
@@ -119,16 +127,18 @@ func (f *yamlFile) loadFile(filename string, static bool) (*viper.Viper, error) 
 }
 
 func (f *yamlFile) getDir(static bool) string {
-	tmp := bufferpool.Get()
-	tmp.AppendString(_Root)
+	buff := bufferpool.Get()
+	buff.AppendString(_Root)
 	if static {
-		tmp.AppendByte(os.PathSeparator)
-		tmp.AppendString(defaultDirStatic)
+		buff.AppendByte(os.PathSeparator)
+		buff.AppendString(defaultDirStatic)
 	} else {
-		tmp.AppendByte(os.PathSeparator)
-		tmp.AppendString(defaultDirDynamic)
+		buff.AppendByte(os.PathSeparator)
+		buff.AppendString(defaultDirDynamic)
 	}
-	return tmp.String()
+	out := buff.String()
+	buff.Free()
+	return out
 }
 
 func (f *yamlFile) getSub(v *viper.Viper, key string) (bconfig.Value, error) {

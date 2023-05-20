@@ -34,11 +34,16 @@ type Value interface {
 	Unmarshal(rawVal any) error
 }
 
+// type Config interface {
+// 	// StaticLoad load configuration once.
+// 	// throughout the lifetime, the configuration is read only once, and the value is cached.
+// 	// calling again will fetch the data in the cache
+// 	StaticLoad(ctx context.Context, key string, namespace ...string) (Value, error)
+// 	// DynamicLoad load real-time configuration values, but allow for slight delays.
+// 	DynamicLoad(ctx context.Context, key string, namespace ...string) (Value, error)
+// }
+
 type Config interface {
-	// StaticLoad load configuration once.
-	// throughout the lifetime, the configuration is read only once, and the value is cached.
-	// calling again will fetch the data in the cache
-	StaticLoad(key string, namespace ...string) (Value, error)
-	// DynamicLoad load real-time configuration values, but allow for slight delays.
-	DynamicLoad(ctx context.Context, key string, namespace ...string) (Value, error)
+	// Load load configuration Value
+	Load(ctx context.Context, key string, namespace ...string) (Value, error)
 }

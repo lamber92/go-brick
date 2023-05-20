@@ -18,59 +18,65 @@ import (
 const (
 	defaultRoot = "config"
 
-	defaultDirStatic  = "static"
-	defaultDirDynamic = "dynamic"
+	defaultDirStatic  = "config"
+	defaultDirDynamic = "config"
 	defaultFilename   = "config"
 )
 
 var (
-	_Root = defaultRoot
+	_root = defaultRoot
 )
 
 // TODO: 加载自定义配置文件目录路径
 
-var _config = newDefault()
-
-func newDefault() *yamlFile {
-	return &yamlFile{
-		static:      sync.Map{},
-		dynamic:     sync.Map{},
-		dynamicLock: bsync.NewSpinLock(),
+func NewStatic() bconfig.Config {
+	return &static{
+		config: sync.Map{},
 	}
 }
 
-type yamlFile struct {
-	static      sync.Map // map[filename]config
-	dynamic     sync.Map // map[filename]config
-	dynamicLock sync.Locker
+type static struct {
+	config sync.Map // map[filename]config
 }
 
-func (f *yamlFile) StaticLoad(key string, filenames ...string) (bconfig.Value, error) {
+func (sc *static) Load(ctx context.Context, key string, filenames ...string) (bconfig.Value, error) {
 	var filename = defaultFilename
 	if len(filenames) > 0 {
 		filename = filenames[0]
 	}
 	// try to get from cache
-	cache, ok := f.static.Load(filename)
+	cache, ok := sc.config.Load(filename)
 	if ok {
-		return f.getSub(cache.(*viper.Viper), key)
+		return handleResult(ctx, cache.(*viper.Viper), key)
 	}
 	// read config file
-	newData, err := f.loadFile(filename, true)
+	newData, err := loadFile(filename, true)
 	if err != nil {
 		return nil, err
 	}
 	if newData == nil {
-		return nil, f.notfoundError(key)
+		return nil, notfoundError(key)
 	}
 	// cache config
 	// do not check key is existing or not
-	f.static.Store(filename, newData)
+	sc.config.Store(filename, newData)
 
-	return f.getSub(newData, key)
+	return handleResult(ctx, newData, key)
 }
 
-func (f *yamlFile) DynamicLoad(ctx context.Context, key string, filenames ...string) (bconfig.Value, error) {
+func NewDynamic() bconfig.Config {
+	return &dynamic{
+		config: sync.Map{},
+		lock:   bsync.NewSpinLock(),
+	}
+}
+
+type dynamic struct {
+	config sync.Map // map[filename]config
+	lock   sync.Locker
+}
+
+func (dc *dynamic) Load(ctx context.Context, key string, filenames ...string) (bconfig.Value, error) {
 	// TODO: 需要将读取配置动作加入到上下文追踪信息
 
 	var filename = defaultFilename
@@ -79,27 +85,27 @@ func (f *yamlFile) DynamicLoad(ctx context.Context, key string, filenames ...str
 	}
 
 	// try to get from cache
-	cache, ok := f.dynamic.Load(filename)
+	cache, ok := dc.config.Load(filename)
 	if ok {
-		return f.getSub(cache.(*viper.Viper), key)
+		return handleResult(ctx, cache.(*viper.Viper), key)
 	}
 	// the time gap between Load() and here is very short.
 	// ignore the fact that another thread has completed the execution of this method in this gap,
 	// resulting in multiple readings of the same file and running multiple watchers.
-	f.dynamicLock.Lock()
-	defer f.dynamicLock.Unlock()
+	dc.lock.Lock()
+	defer dc.lock.Unlock()
 	// try again, possibly another thread has already read the configuration and cached it.
-	cache, ok = f.dynamic.Load(filename)
+	cache, ok = dc.config.Load(filename)
 	if ok {
-		return f.getSub(cache.(*viper.Viper), key)
+		return handleResult(ctx, cache.(*viper.Viper), key)
 	}
 	// read config file
-	newData, err := f.loadFile(filename, true)
+	newData, err := loadFile(filename, true)
 	if err != nil {
 		return nil, err
 	}
 	if newData == nil {
-		return nil, f.notfoundError(key)
+		return nil, notfoundError(key)
 	}
 	// run watcher
 	newData.OnConfigChange(func(in fsnotify.Event) {
@@ -109,13 +115,13 @@ func (f *yamlFile) DynamicLoad(ctx context.Context, key string, filenames ...str
 
 	// cache config
 	// do not check key is existing or not
-	f.dynamic.Store(filename, newData)
+	dc.config.Store(filename, newData)
 
-	return f.getSub(newData, key)
+	return handleResult(ctx, newData, key)
 }
 
-func (f *yamlFile) loadFile(filename string, static bool) (*viper.Viper, error) {
-	dir := f.getDir(static)
+func loadFile(filename string, static bool) (*viper.Viper, error) {
+	dir := getDir(static)
 	v := viper.New()
 	v.AddConfigPath(dir)
 	v.SetConfigFile(filename)
@@ -126,9 +132,9 @@ func (f *yamlFile) loadFile(filename string, static bool) (*viper.Viper, error) 
 	return v, nil
 }
 
-func (f *yamlFile) getDir(static bool) string {
+func getDir(static bool) string {
 	buff := bufferpool.Get()
-	buff.AppendString(_Root)
+	buff.AppendString(_root)
 	if static {
 		buff.AppendByte(os.PathSeparator)
 		buff.AppendString(defaultDirStatic)
@@ -141,14 +147,14 @@ func (f *yamlFile) getDir(static bool) string {
 	return out
 }
 
-func (f *yamlFile) getSub(v *viper.Viper, key string) (bconfig.Value, error) {
+func handleResult(ctx context.Context, v *viper.Viper, key string) (bconfig.Value, error) {
 	sub := v.Sub(key)
 	if sub == nil {
-		return nil, f.notfoundError(key)
+		return nil, notfoundError(key)
 	}
 	return newDefaultValue(sub), nil
 }
 
-func (f *yamlFile) notfoundError(key string) error {
+func notfoundError(key string) error {
 	return berror.NewNotFound(nil, fmt.Sprintf("Cannot find key[%s]", key))
 }

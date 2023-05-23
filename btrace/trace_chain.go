@@ -1,6 +1,8 @@
 package btrace
 
 import (
+	"context"
+	"go-brick/bcontext"
 	"go-brick/internal/bufferpool"
 	bsync "go-brick/internal/sync"
 	"sync"
@@ -47,6 +49,29 @@ func NewChain() Chain {
 	return &defaultChain{
 		chain:  make([]Metadata, 0),
 		Locker: bsync.NewSpinLock(),
+	}
+}
+
+func AppendMDIntoCtx(ctx context.Context, md Metadata) bool {
+	switch tmp := ctx.(type) {
+	case bcontext.Context:
+		var chain Chain
+		if ptr, ok := tmp.Get(bcontext.TraceChain); !ok || ptr == nil {
+			chain = NewChain()
+			chain.Append(md)
+		} else {
+			if chain, ok = ptr.(Chain); !ok {
+				chain = NewChain()
+				chain.Append(md)
+			} else {
+				chain.Append(md)
+			}
+		}
+		tmp.Set(bcontext.TraceChain, chain)
+		return true
+	default:
+		// do nothing...
+		return false
 	}
 }
 

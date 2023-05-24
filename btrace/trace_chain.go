@@ -75,6 +75,15 @@ func AppendMDIntoCtx(ctx context.Context, md Metadata) bool {
 	}
 }
 
+func GetMDFromCtx(ctx context.Context) (chain Chain, ok bool) {
+	ptr := ctx.Value(bcontext.TraceChain)
+	if ptr == nil {
+		return
+	}
+	chain, ok = ptr.(Chain)
+	return
+}
+
 type defaultChain struct {
 	chain []Metadata
 	sync.Locker

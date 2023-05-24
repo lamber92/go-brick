@@ -18,7 +18,8 @@ func newMetadata(namespace, k string, v bconfig.Value) *defaultMD {
 		TypeName:   "yaml",
 		Namespace:  namespace,
 		Key:        k,
-		Value:      v,
+		// the value pointed by the pointer may change, here must be a mirror image
+		Value: v.String(),
 	}
 }
 
@@ -27,7 +28,7 @@ type defaultMD struct {
 	TypeName   string        `json:"type"`
 	Namespace  string        `json:"namespace"`
 	Key        string        `json:"key"`
-	Value      bconfig.Value `json:"value"`
+	Value      string        `json:"value"`
 }
 
 func (m *defaultMD) Module() btrace.Module {
@@ -44,6 +45,6 @@ func (m *defaultMD) MarshalLogObject(enc zapcore.ObjectEncoder) error {
 	enc.AddString("type", m.TypeName)
 	enc.AddString("namespace", m.Namespace)
 	enc.AddString("key", m.Key)
-	enc.AddString("value", m.Value.String())
+	enc.AddString("value", m.Value)
 	return nil
 }

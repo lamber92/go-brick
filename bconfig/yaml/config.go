@@ -93,7 +93,7 @@ func (c *yamlConfig) Load(ctx context.Context, key string, filenames ...string) 
 	}
 
 	// read config file
-	newData, err := c.loadFromFile(c.generateDir(configTypeStatic), filename)
+	newData, err := c.loadFromFile(c.generateDir(), filename)
 	if err != nil {
 		return nil, err
 	}
@@ -104,7 +104,7 @@ func (c *yamlConfig) Load(ctx context.Context, key string, filenames ...string) 
 	if c.dynamic {
 		// run watcher
 		newData.OnConfigChange(func(in fsnotify.Event) {
-			if c.lock == nil {
+			if c.eventHook == nil {
 				c.onChange(in.String())
 			} else {
 				c.eventHook(in.String())
@@ -121,6 +121,8 @@ func (c *yamlConfig) Load(ctx context.Context, key string, filenames ...string) 
 	return
 }
 
+// RegisterOnChange register callback function for configuration changing notification
+// nb. this function is not thread-safe.
 func (c *yamlConfig) RegisterOnChange(f bconfig.OnChangeFunc) {
 	c.eventHook = f
 }
@@ -140,12 +142,16 @@ func (c *yamlConfig) loadFromFile(dir, filename string) (*viper.Viper, error) {
 	return v, nil
 }
 
-func (c *yamlConfig) generateDir(subDir string) string {
+func (c *yamlConfig) generateDir() string {
 	buff := bufferpool.Get()
 	buff.AppendString(_root)
 	// buff.AppendByte(os.PathSeparator)
 	buff.AppendByte('/')
-	buff.AppendString(subDir)
+	if c.dynamic {
+		buff.AppendString(configTypeDynamic)
+	} else {
+		buff.AppendString(configTypeStatic)
+	}
 	out := buff.String()
 	buff.Free()
 	return out

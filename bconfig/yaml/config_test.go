@@ -3,6 +3,9 @@ package yaml_test
 import (
 	"go-brick/bconfig/yaml"
 	"go-brick/bcontext"
+	"go-brick/btrace"
+	"os"
+	"strings"
 	"testing"
 	"time"
 
@@ -81,6 +84,63 @@ func TestNewStatic_ParseMultiLayer(t *testing.T) {
 	assert.Equal(t, "jjj", testKey.E2xx)
 }
 
-func TestNewDynamic(t *testing.T) {
+func TestNewStatic_GetTraceMD(t *testing.T) {
+	yaml.ReplaceRootDir("./config_test")
+	ctx := bcontext.New()
+	static := yaml.NewStatic()
+	_, _ = static.Load(ctx, "TestKey.E", "test")
 
+	trace, ok := btrace.GetMDFromCtx(ctx)
+	assert.Equal(t, true, ok)
+	t.Log(trace)
+}
+
+func TestNewDynamic(t *testing.T) {
+	yaml.ReplaceRootDir("./config_test")
+	ctx := bcontext.New()
+	dynamic := yaml.NewDynamic()
+	v, err := dynamic.Load(ctx, "TestKey.E", "test")
+	assert.Equal(t, nil, err)
+
+	var (
+		iii = "iii"
+		kkk = "kkk"
+	)
+
+	origValue := v.GetString("E1")
+	assert.Equal(t, iii, origValue)
+
+	modifyConfig := func(old, new string) {
+		filePath := "./config_test/dynamic/test.yaml" // 文件路径
+		content, err := os.ReadFile(filePath)
+		if err != nil {
+			t.Fatal(err)
+		}
+		newContent := strings.Replace(string(content), old, new, 1)
+		if err = os.WriteFile(filePath, []byte(newContent), 0644); err != nil {
+			t.Fatal(err)
+		}
+	}
+	// change E1 value
+	modifyConfig(iii, kkk)
+	time.Sleep(time.Second)
+	v, err = dynamic.Load(ctx, "TestKey.E", "test")
+	// check E1 value is changed or not
+	assert.Equal(t, nil, err)
+	newValue := v.GetString("E1")
+	assert.Equal(t, kkk, newValue)
+
+	// restore E1 value
+	modifyConfig(kkk, iii)
+	time.Sleep(time.Second)
+	v, err = dynamic.Load(ctx, "TestKey.E", "test")
+	// check E1 value is restored or not
+	assert.Equal(t, nil, err)
+	newValue2 := v.GetString("E1")
+	assert.Equal(t, iii, newValue2)
+
+	// check load config tracing info
+	trace, ok := btrace.GetMDFromCtx(ctx)
+	assert.Equal(t, true, ok)
+	t.Log(trace)
 }

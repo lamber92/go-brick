@@ -1,0 +1,10 @@
+TestKey:
+  A: "123456"
+  B: 123456
+  C:
+    - "xxxxxxxxxx"
+    - "yyyyyyyyyy"
+  D: 3m
+  E:
+    E1: "iii"
+    E2: "jjj"

@@ -1,10 +1,16 @@
 package logger
 
 var (
-	Access = newAccessLogger()
-	Biz    = newBizLogger()
-	Infra  = newInfraLogger()
+	Access Logger
+	Biz    Logger
+	Infra  Logger
 )
+
+func init() {
+	Access = newAccessLogger()
+	Infra = newInfraLogger()
+	Biz = newBizLogger()
+}
 
 // Replace replace all built-in logging engines
 func Replace(lgr Logger) {

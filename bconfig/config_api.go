@@ -32,13 +32,18 @@ type Value interface {
 	// Unmarshal unmarshals the config into a Struct. Make sure that the tags
 	// on the fields of the structure are properly set.
 	Unmarshal(rawVal any) error
+	// String format Value printer
+	String() string
 }
 
+type OnChangeFunc func(event string)
+
 type Config interface {
-	// StaticLoad load configuration once.
-	// throughout the lifetime, the configuration is read only once, and the value is cached.
-	// calling again will fetch the data in the cache
-	StaticLoad(key string, namespace ...string) (Value, error)
-	// DynamicLoad load real-time configuration values, but allow for slight delays.
-	DynamicLoad(ctx context.Context, key string, namespace ...string) (Value, error)
+	// Load load configuration Value
+	Load(ctx context.Context, key string, namespace ...string) (Value, error)
+	// RegisterOnChange register callback function for configuration changing notification
+	// nb. this function is not thread-safe.
+	RegisterOnChange(OnChangeFunc)
+	// Close release resources
+	Close()
 }

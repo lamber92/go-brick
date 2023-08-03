@@ -44,4 +44,6 @@ type Config interface {
 	// RegisterOnChange register callback function for configuration changing notification
 	// nb. this function is not thread-safe.
 	RegisterOnChange(OnChangeFunc)
+	// Close release resources
+	Close()
 }

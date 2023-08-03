@@ -28,8 +28,9 @@ var (
 	_once sync.Once
 )
 
-// ReplaceRootDir Replace the configuration file root directory path
-func ReplaceRootDir(dir string) {
+// InitRootDir specify the configuration file root directory path.
+// the default root path is the config directory under the current directory
+func InitRootDir(dir string) {
 	_once.Do(func() {
 		_root = dir
 	})
@@ -125,6 +126,10 @@ func (c *yamlConfig) Load(ctx context.Context, key string, filenames ...string) 
 // nb. this function is not thread-safe.
 func (c *yamlConfig) RegisterOnChange(f bconfig.OnChangeFunc) {
 	c.eventHook = f
+}
+
+func (c *yamlConfig) Close() {
+	return
 }
 
 func (c *yamlConfig) onChange(event string) {

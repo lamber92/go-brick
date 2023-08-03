@@ -13,7 +13,7 @@ import (
 )
 
 func TestNewStatic_GetFromKey(t *testing.T) {
-	yaml.ReplaceRootDir("./config_test")
+	yaml.InitRootDir("./config_test")
 	ctx := bcontext.New()
 	static := yaml.NewStatic()
 	v, err := static.Load(ctx, "TestKey", "test")
@@ -38,7 +38,7 @@ func TestNewStatic_GetFromKey(t *testing.T) {
 }
 
 func TestNewStatic_ParseToStruct(t *testing.T) {
-	yaml.ReplaceRootDir("./config_test")
+	yaml.InitRootDir("./config_test")
 	ctx := bcontext.New()
 	static := yaml.NewStatic()
 	v, err := static.Load(ctx, "TestKey", "test")
@@ -67,7 +67,7 @@ func TestNewStatic_ParseToStruct(t *testing.T) {
 }
 
 func TestNewStatic_ParseMultiLayer(t *testing.T) {
-	yaml.ReplaceRootDir("./config_test")
+	yaml.InitRootDir("./config_test")
 	ctx := bcontext.New()
 	static := yaml.NewStatic()
 	v, err := static.Load(ctx, "TestKey.E", "test")
@@ -85,7 +85,7 @@ func TestNewStatic_ParseMultiLayer(t *testing.T) {
 }
 
 func TestNewStatic_GetTraceMD(t *testing.T) {
-	yaml.ReplaceRootDir("./config_test")
+	yaml.InitRootDir("./config_test")
 	ctx := bcontext.New()
 	static := yaml.NewStatic()
 	_, _ = static.Load(ctx, "TestKey.E", "test")
@@ -96,7 +96,7 @@ func TestNewStatic_GetTraceMD(t *testing.T) {
 }
 
 func TestNewDynamic(t *testing.T) {
-	yaml.ReplaceRootDir("./config_test")
+	yaml.InitRootDir("./config_test")
 	ctx := bcontext.New()
 	dynamic := yaml.NewDynamic()
 	v, err := dynamic.Load(ctx, "TestKey.E", "test")

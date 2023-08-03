@@ -1,4 +1,4 @@
-package yaml
+package apollo
 
 import (
 	"go-brick/bconfig"
@@ -9,7 +9,7 @@ import (
 )
 
 const (
-	traceModule btrace.Module = "yaml_config"
+	traceModule btrace.Module = "apollo_config"
 )
 
 func newMetadata(namespace, k string, v bconfig.Value) *defaultMD {

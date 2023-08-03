@@ -85,3 +85,9 @@ func TestDefaultError_As(t *testing.T) {
 	assert.Equal(t, err2, err4)
 	assert.Equal(t, err3, err4)
 }
+
+func TestIsCode(t *testing.T) {
+	_, _, _, err4 := generateTestError()
+	assert.Equal(t, true, berror.IsCode(err4, bcode.NotFound))
+	assert.Equal(t, false, berror.IsCode(err4, bcode.Forbidden))
+}

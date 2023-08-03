@@ -1,6 +1,7 @@
 package berror
 
 import (
+	"errors"
 	"go-brick/berror/bcode"
 	"go-brick/berror/bstatus"
 	"go-brick/bstack"
@@ -197,4 +198,19 @@ func NewInternalError(err error, reason string, detail ...any) error {
 		ds = detail[0]
 	}
 	return NewWithSkip(err, bstatus.New(bcode.InternalError, reason, ds), 1)
+}
+
+// IsCode determine whether the error code of err meets expectations.
+func IsCode(err error, code bcode.Code) bool {
+	if err == nil {
+		return false
+	}
+	var e Error
+	if ok := errors.As(err, &e); !ok {
+		return false
+	}
+	if e.Status().Code().ToInt() == code.ToInt() {
+		return true
+	}
+	return false
 }

@@ -23,8 +23,8 @@ func Keys[Tk btype.Number | ~string, Tv any](source map[Tk]Tv) []Tk {
 
 // Values Get the value slice of the mapping table.
 // the returned results are unordered
-func Values(source map[any]any) []any {
-	r := make([]any, 0, len(source))
+func Values[Tk btype.Number | ~string, Tv any](source map[Tk]Tv) []Tv {
+	r := make([]Tv, 0, len(source))
 	for _, v := range source {
 		r = append(r, v)
 	}

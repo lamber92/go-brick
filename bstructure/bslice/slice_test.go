@@ -1,6 +1,7 @@
 package bslice_test
 
 import (
+	"fmt"
 	"go-brick/bstructure/bslice"
 	"testing"
 
@@ -79,12 +80,107 @@ func TestRemoveDuplicates(t *testing.T) {
 
 func TestSortNumber(t *testing.T) {
 	s1 := []int64{99, 1111, 12312, 11, 2, 11, 2}
-	assert.Equal(t, []int64{2, 2, 11, 11, 99, 1111, 12312}, bslice.SortNumber(s1))
-	assert.Equal(t, []int64{12312, 1111, 99, 11, 11, 2, 2}, bslice.SortNumber(s1, true))
+	assert.Equal(t, []int64{2, 2, 11, 11, 99, 1111, 12312}, bslice.SortNumbers(s1))
+	assert.Equal(t, []int64{12312, 1111, 99, 11, 11, 2, 2}, bslice.SortNumbers(s1, true))
 }
 
 func TestSortSting(t *testing.T) {
 	s1 := []string{"aaa", "bbb", "a", "b", "xxxx", "ccc", "abc"}
-	assert.Equal(t, []string{"a", "aaa", "abc", "b", "bbb", "ccc", "xxxx"}, bslice.SortSting(s1))
-	assert.Equal(t, []string{"xxxx", "ccc", "bbb", "b", "abc", "aaa", "a"}, bslice.SortSting(s1, true))
+	assert.Equal(t, []string{"a", "aaa", "abc", "b", "bbb", "ccc", "xxxx"}, bslice.SortStings(s1))
+	assert.Equal(t, []string{"xxxx", "ccc", "bbb", "b", "abc", "aaa", "a"}, bslice.SortStings(s1, true))
+}
+
+type Temp struct {
+	Field1 uint
+	Field2 string
+}
+
+func (Temp) CanConvert() bool { return true }
+
+func (t Temp) String() string {
+	return fmt.Sprintf("{Field1:%d Field2:%s}", t.Field1, t.Field2)
+}
+
+func TestGetFieldMap_StructObj(t *testing.T) {
+	var test1 = []Temp{
+		{Field1: 10, Field2: "10"},
+		{Field1: 10, Field2: "100"},
+		{Field1: 20, Field2: "20"},
+		{Field1: 30, Field2: "30"},
+		{Field1: 40, Field2: "40"},
+		{Field1: 20, Field2: "2000"},
+		{Field1: 20, Field2: "20"},
+	}
+	s1, err := bslice.GetFieldMap[uint, Temp](test1, "Field1")
+	t.Logf("%+v %+v\n", s1, err)
+	// map[10:[{Field1:10 Field2:10} {Field1:10 Field2:100}] 20:[{Field1:20 Field2:20} {Field1:20 Field2:2000} {Field1:20 Field2:20}] 30:[{Field1:30 Field2:30}] 40:[{Field1:40 Field2:40}]] <nil>
+
+	s2, err := bslice.GetFieldMap[string, Temp](test1, "Field2")
+	t.Logf("%+v %+v\n", s2, err)
+	// map[10:[{Field1:10 Field2:10}] 100:[{Field1:10 Field2:100}] 20:[{Field1:20 Field2:20} {Field1:20 Field2:20}] 2000:[{Field1:20 Field2:2000}] 30:[{Field1:30 Field2:30}] 40:[{Field1:40 Field2:40}]] <nil>
+}
+
+func TestGetFieldMap_StructPtr(t *testing.T) {
+	var test1 = []*Temp{
+		{Field1: 10, Field2: "10"},
+		{Field1: 10, Field2: "100"},
+		{Field1: 20, Field2: "20"},
+		{Field1: 30, Field2: "30"},
+		{Field1: 40, Field2: "40"},
+		{Field1: 20, Field2: "2000"},
+		{Field1: 20, Field2: "20"},
+	}
+	s1, err := bslice.GetFieldMap[uint, *Temp](test1, "Field1")
+	t.Logf("%+v %+v\n", s1, err)
+	// map[10:[{Field1:10 Field2:10} {Field1:10 Field2:100}] 20:[{Field1:20 Field2:20} {Field1:20 Field2:2000} {Field1:20 Field2:20}] 30:[{Field1:30 Field2:30}] 40:[{Field1:40 Field2:40}]] <nil>
+
+	s2, err := bslice.GetFieldMap[string, *Temp](test1, "Field2")
+	t.Logf("%+v %+v\n", s2, err)
+	// map[10:[{Field1:10 Field2:10}] 100:[{Field1:10 Field2:100}] 20:[{Field1:20 Field2:20} {Field1:20 Field2:20}] 2000:[{Field1:20 Field2:2000}] 30:[{Field1:30 Field2:30}] 40:[{Field1:40 Field2:40}]] <nil>
+}
+
+func TestGetFieldValues_StructObj(t *testing.T) {
+	var test1 = []Temp{
+		{Field1: 10, Field2: "10"},
+		{Field1: 10, Field2: "100"},
+		{Field1: 20, Field2: "20"},
+		{Field1: 30, Field2: "30"},
+		{Field1: 40, Field2: "40"},
+		{Field1: 20, Field2: "2000"},
+		{Field1: 20, Field2: "20"},
+	}
+	s1, err := bslice.GetFieldValues[Temp, uint](test1, "Field1")
+	if err != nil {
+		t.Fatal(err)
+	}
+	assert.Equal(t, []uint{10, 10, 20, 30, 40, 20, 20}, s1)
+
+	s2, err := bslice.GetFieldValues[Temp, string](test1, "Field2")
+	if err != nil {
+		t.Fatal(err)
+	}
+	assert.Equal(t, []string{"10", "100", "20", "30", "40", "2000", "20"}, s2)
+}
+
+func TestGetFieldValues_StructPtr(t *testing.T) {
+	var test1 = []*Temp{
+		{Field1: 10, Field2: "10"},
+		{Field1: 10, Field2: "100"},
+		{Field1: 20, Field2: "20"},
+		{Field1: 30, Field2: "30"},
+		{Field1: 40, Field2: "40"},
+		{Field1: 20, Field2: "2000"},
+		{Field1: 20, Field2: "20"},
+	}
+	s1, err := bslice.GetFieldValues[*Temp, uint](test1, "Field1")
+	if err != nil {
+		t.Fatal(err)
+	}
+	assert.Equal(t, []uint{10, 10, 20, 30, 40, 20, 20}, s1)
+
+	s2, err := bslice.GetFieldValues[*Temp, string](test1, "Field2")
+	if err != nil {
+		t.Fatal(err)
+	}
+	assert.Equal(t, []string{"10", "100", "20", "30", "40", "2000", "20"}, s2)
 }

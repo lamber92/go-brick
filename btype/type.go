@@ -23,3 +23,7 @@ type UnsignedInteger interface {
 type Float interface {
 	~float32 | ~float64
 }
+
+type Struct interface {
+	CanConvert() bool
+}

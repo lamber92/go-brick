@@ -1,10 +1,10 @@
 package btype
 
 type Number interface {
-	ExInteger | Float
+	IntegerEx | Float
 }
 
-type ExInteger interface {
+type IntegerEx interface {
 	Integer | uintptr
 }
 

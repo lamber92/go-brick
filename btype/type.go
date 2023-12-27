@@ -1,5 +1,9 @@
 package btype
 
+type Key interface {
+	Number | String
+}
+
 type Number interface {
 	IntegerEx | Float
 }
@@ -22,6 +26,10 @@ type UnsignedInteger interface {
 
 type Float interface {
 	~float32 | ~float64
+}
+
+type String interface {
+	~string
 }
 
 type Struct interface {

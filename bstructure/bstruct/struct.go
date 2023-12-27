@@ -11,7 +11,7 @@ import (
 // GetFieldMap specify a field of the structure as the key and convert the structure slice into a mapping table.
 // the source slice can be a structure object slice or a structure pointer slice,
 // other types will return err.
-func GetFieldMap[Tk btype.Number | ~string, Tv btype.Struct](src []Tv, fieldName string) (map[Tk][]Tv, error) {
+func GetFieldMap[Tk btype.Key, Tv btype.Struct](src []Tv, fieldName string) (map[Tk][]Tv, error) {
 	if len(src) == 0 || len(fieldName) == 0 {
 		return map[Tk][]Tv{}, nil
 	}

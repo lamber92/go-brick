@@ -39,8 +39,8 @@ func Combine[T any](src [][]T) []T {
 	return r
 }
 
-// RemoveDuplicates Remove duplicate items
-func RemoveDuplicates[T btype.Key](src []T) []T {
+// RemoveDuplicates remove duplicate items
+func RemoveDuplicates[T comparable](src []T) []T {
 	r := make([]T, 0, len(src))
 	check := make(map[T]struct{})
 	for _, v := range src {
@@ -53,7 +53,7 @@ func RemoveDuplicates[T btype.Key](src []T) []T {
 	return r
 }
 
-// SortNumbers Sort numeric slice
+// SortNumbers sort numeric slice
 func SortNumbers[T btype.Number](src []T, desc ...bool) []T {
 	if len(src) == 0 {
 		return src
@@ -90,7 +90,7 @@ func (x descStringSlice[T]) Len() int           { return len(x) }
 func (x descStringSlice[T]) Less(i, j int) bool { return x[i] > x[j] }
 func (x descStringSlice[T]) Swap(i, j int)      { x[i], x[j] = x[j], x[i] }
 
-// SortStrings Sort string slice
+// SortStrings sort string slice
 func SortStrings[T btype.String](src []T, desc ...bool) []T {
 	if len(src) == 0 {
 		return src

@@ -115,18 +115,19 @@ func TestSortNumber(t *testing.T) {
 	s1 := []int64{99, 1111, 12312, 11, 2, 11, 2}
 	assert.Equal(t, []int64{2, 2, 11, 11, 99, 1111, 12312}, bslice.SortNumbers(s1))
 	assert.Equal(t, []int64{12312, 1111, 99, 11, 11, 2, 2}, bslice.SortNumbers(s1, true))
+
+	s2 := []uint64{99, 1111, 12312, 11, 2, 11, 2}
+	assert.Equal(t, []uint64{2, 2, 11, 11, 99, 1111, 12312}, bslice.SortNumbers(s2))
+	assert.Equal(t, []uint64{12312, 1111, 99, 11, 11, 2, 2}, bslice.SortNumbers(s2, true))
 }
 
-func TestSortStrings_string(t *testing.T) {
+func TestSortStrings(t *testing.T) {
 	s1 := []string{"aaa", "bbb", "a", "b", "xxxx", "ccc", "abc"}
 	assert.Equal(t, []string{"a", "aaa", "abc", "b", "bbb", "ccc", "xxxx"}, bslice.SortStrings(s1))
 	assert.Equal(t, []string{"xxxx", "ccc", "bbb", "b", "abc", "aaa", "a"}, bslice.SortStrings(s1, true))
-}
 
-type MyString string
-
-func TestSortStrings_MyString(t *testing.T) {
-	s1 := []MyString{"aaa", "bbb", "a", "b", "xxxx", "ccc", "abc"}
-	assert.Equal(t, []MyString{"a", "aaa", "abc", "b", "bbb", "ccc", "xxxx"}, bslice.SortStrings(s1))
-	assert.Equal(t, []MyString{"xxxx", "ccc", "bbb", "b", "abc", "aaa", "a"}, bslice.SortStrings(s1, true))
+	type MyString string
+	s2 := []MyString{"aaa", "bbb", "a", "b", "xxxx", "ccc", "abc"}
+	assert.Equal(t, []MyString{"a", "aaa", "abc", "b", "bbb", "ccc", "xxxx"}, bslice.SortStrings(s2))
+	assert.Equal(t, []MyString{"xxxx", "ccc", "bbb", "b", "abc", "aaa", "a"}, bslice.SortStrings(s2, true))
 }

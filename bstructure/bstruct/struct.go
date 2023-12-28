@@ -11,25 +11,25 @@ import (
 // GetFieldMap specify a field of the structure as the key and convert the structure slice into a mapping table.
 // the source slice can be a structure object slice or a structure pointer slice,
 // other types will return err.
-func GetFieldMap[Tk btype.Key, Tv btype.Struct](src []Tv, fieldName string) (map[Tk][]Tv, error) {
+func GetFieldMap[K comparable, V btype.Struct](src []V, fieldName string) (map[K][]V, error) {
 	if len(src) == 0 || len(fieldName) == 0 {
-		return map[Tk][]Tv{}, nil
+		return map[K][]V{}, nil
 	}
 	if !src[0].CanConvert() {
 		return nil, errors.New("source slice can not convert")
 	}
 
-	r := make(map[Tk][]Tv)
+	r := make(map[K][]V)
 	for _, elem := range src {
 		field, err := getStructFieldValue(reflect.ValueOf(elem), fieldName)
 		if err != nil {
 			return nil, err
 		}
 		switch key := field.Interface().(type) {
-		case Tk:
+		case K:
 			s, exist := r[key]
 			if !exist {
-				s = make([]Tv, 0)
+				s = make([]V, 0)
 			}
 			r[key] = append(s, elem)
 		default:
@@ -42,21 +42,21 @@ func GetFieldMap[Tk btype.Key, Tv btype.Struct](src []Tv, fieldName string) (map
 // GetFieldValues extract the specified structure field value and return it in a slice.
 // the source slice can be a structure object slice or a structure pointer slice,
 // other types will return err.
-func GetFieldValues[T btype.Struct, Tr any](src []T, fieldName string) ([]Tr, error) {
+func GetFieldValues[T btype.Struct, V any](src []T, fieldName string) ([]V, error) {
 	if len(src) == 0 || len(fieldName) == 0 {
-		return []Tr{}, nil
+		return []V{}, nil
 	}
 	if !src[0].CanConvert() {
 		return nil, errors.New("source slice can not convert")
 	}
 
-	r := make([]Tr, 0, len(src))
+	r := make([]V, 0, len(src))
 	for _, elem := range src {
 		field, err := getStructFieldValue(reflect.ValueOf(elem), fieldName)
 		if err != nil {
 			return nil, err
 		}
-		v, ok := field.Interface().(Tr)
+		v, ok := field.Interface().(V)
 		if !ok {
 			return nil, errors.New(fmt.Sprintf("the field type is not match. now: '%T'", field.Interface()))
 		}
@@ -90,25 +90,25 @@ func getStructFieldValue(elem reflect.Value, fieldName string) (field reflect.Va
 // GetFieldValuesEx it is an enhanced version of GetFieldValue,
 // that supports probing the fieldName value of nested structures.
 // uses the symbol `.` to separate the field names of each layer of the structure.
-func GetFieldValuesEx[T btype.Struct, Tr any](src []T, fieldName string) ([]Tr, error) {
+func GetFieldValuesEx[T btype.Struct, V any](src []T, fieldName string) ([]V, error) {
 	if len(src) == 0 || len(fieldName) == 0 {
-		return []Tr{}, nil
+		return []V{}, nil
 	}
 	if !src[0].CanConvert() {
 		return nil, errors.New("source slice can not convert")
 	}
 	fieldNames := strings.Split(fieldName, ".")
 	if len(fieldNames) == 1 {
-		return GetFieldValues[T, Tr](src, fieldName)
+		return GetFieldValues[T, V](src, fieldName)
 	}
 
-	r := make([]Tr, 0, len(src))
+	r := make([]V, 0, len(src))
 	for _, elem := range src {
 		field, err := getNestedStructFieldValue(reflect.ValueOf(elem), fieldNames)
 		if err != nil {
 			return nil, err
 		}
-		v, ok := field.Interface().(Tr)
+		v, ok := field.Interface().(V)
 		if !ok {
 			return nil, errors.New(fmt.Sprintf("the field type is not match. now: '%T'", field.Interface()))
 		}

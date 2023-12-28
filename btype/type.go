@@ -1,27 +1,29 @@
+// Package btype
+// internal generic type definition
+// refer to the definition from https://pkg.go.dev/golang.org/x/exp/constraints
+// because the `x` package is still in the iteration process and may be unstable,
+// only some definitions are extracted here for use and modification.
 package btype
 
-type Key interface {
+// Ordered data types that can be compared and sorted
+type Ordered interface {
 	Number | String
 }
 
 type Number interface {
-	IntegerEx | Float
-}
-
-type IntegerEx interface {
-	Integer | uintptr
+	Integer | Float
 }
 
 type Integer interface {
-	SignedInteger | UnsignedInteger
+	Signed | Unsigned
 }
 
-type SignedInteger interface {
+type Signed interface {
 	~int | ~int8 | ~int16 | ~int32 | ~int64
 }
 
-type UnsignedInteger interface {
-	~uint | ~uint8 | ~uint16 | ~uint32 | ~uint64
+type Unsigned interface {
+	~uint | ~uint8 | ~uint16 | ~uint32 | ~uint64 | ~uintptr
 }
 
 type Float interface {

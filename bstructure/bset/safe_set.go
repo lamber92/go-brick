@@ -13,9 +13,8 @@ type SafeSet[T comparable] interface {
 	// Has determine whether an element exists in the SafeSet
 	Has(item T) bool
 	// Contains determine whether certain elements exist in the SafeSet
-	// - if all elements exist, return the `nil` SafeSet and a `true` flag.
-	// - else if only some elements exist, return a new SafeSet with `existing elements` and a `true` flag.
-	// - else return the `nil` SafeSet and a `false` flag.
+	// - if all elements exist or only some elements exist, return a new SafeSet with hit elements and a `true` flag.
+	// - else return the `empty` SafeSet and a `false` flag.
 	Contains(item ...T) (SafeSet[T], bool)
 	// Clear remove all items
 	Clear()
@@ -90,7 +89,7 @@ func (s *defaultSafeSet[T]) Contains(items ...T) (SafeSet[T], bool) {
 	if len(m) > 0 {
 		return &defaultSafeSet[T]{m: m}, true
 	}
-	return nil, true
+	return &defaultSafeSet[T]{m: m}, false
 }
 
 func (s *defaultSafeSet[T]) Clear() {

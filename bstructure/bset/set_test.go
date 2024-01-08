@@ -8,9 +8,9 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestGetFromSlice(t *testing.T) {
+func TestFromSlice(t *testing.T) {
 	var s1 = []uint{1, 2, 3, 4, 5, 5, 1}
-	m1 := bset.GetFromSlice(s1)
+	m1 := bset.FromSlice(s1)
 	assert.Equal(t,
 		map[uint]struct{}{
 			1: {},
@@ -21,7 +21,7 @@ func TestGetFromSlice(t *testing.T) {
 		}, m1)
 
 	var s2 = []string{"1", "2", "3", "4", "5", "5", "1"}
-	m2 := bset.GetFromSlice(s2)
+	m2 := bset.FromSlice(s2)
 	assert.Equal(t,
 		map[string]struct{}{
 			"1": {},
@@ -37,7 +37,7 @@ func TestGetFromSlice(t *testing.T) {
 		uptr1, uptr2, uptr3, uptr4, uptr5, uptr6 = uintptr(unsafe.Pointer(pa1)), uintptr(unsafe.Pointer(pa2)), uintptr(unsafe.Pointer(pa3)), uintptr(unsafe.Pointer(pa4)), uintptr(unsafe.Pointer(pa5)), uintptr(unsafe.Pointer(pa6))
 		s3                                       = []uintptr{uptr1, uptr2, uptr3, uptr4, uptr5, uptr6}
 	)
-	m3 := bset.GetFromSlice(s3)
+	m3 := bset.FromSlice(s3)
 	assert.Equal(t,
 		map[uintptr]struct{}{
 			uintptr(unsafe.Pointer(pa1)): {},

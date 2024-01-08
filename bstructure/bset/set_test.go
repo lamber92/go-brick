@@ -2,6 +2,7 @@ package bset_test
 
 import (
 	"go-brick/bstructure/bset"
+	"go-brick/bstructure/bslice"
 	"testing"
 	"unsafe"
 
@@ -45,4 +46,16 @@ func TestFromSlice(t *testing.T) {
 			uintptr(unsafe.Pointer(pa3)): {},
 			uintptr(unsafe.Pointer(pa4)): {},
 		}, m3)
+}
+
+func TestToSlice(t *testing.T) {
+	var s = []uint{1, 2, 3, 4, 5, 5, 1}
+	set := bset.FromSlice(s)
+	assert.Equal(t, []uint{1, 2, 3, 4, 5}, bslice.SortNumbers(bset.ToSlice(set)))
+}
+
+func TestToSafeSet(t *testing.T) {
+	var s = []uint{1, 2, 3, 4, 5, 5, 1}
+	ss := bset.ToSafeSet(bset.FromSlice(s))
+	assert.Equal(t, []uint{1, 2, 3, 4, 5}, bslice.SortNumbers(ss.ToSlice()))
 }

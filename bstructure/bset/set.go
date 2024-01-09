@@ -74,6 +74,9 @@ func UnionSet[T comparable](src ...map[T]struct{}) map[T]struct{} {
 // B{2,3,4} \ A{1,2,3} = {4}
 func ComplementSet[T comparable](A, B map[T]struct{}) map[T]struct{} {
 	r := make(map[T]struct{})
+	if A == nil || B == nil {
+		return r
+	}
 	for k := range B {
 		if _, ok := A[k]; !ok {
 			r[k] = struct{}{}

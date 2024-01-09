@@ -74,3 +74,29 @@ func TestSafeSet_IsEmpty(t *testing.T) {
 	set.Clear()
 	assert.Equal(t, true, set.IsEmpty())
 }
+
+func TestSafeSet_IntersectionSet(t *testing.T) {
+	var (
+		a = bset.NewSafeSet("111", "222", "333", "444")
+		b = bset.NewSafeSet("222", "333", "444", "555")
+		c = bset.NewSafeSet("333", "444", "555", "666")
+	)
+	assert.Equal(t, []string{"333", "444"}, bslice.SortStrings(a.IntersectionSet(b, c).ToSlice()))
+}
+
+func TestSafeSet_UnionSet(t *testing.T) {
+	var (
+		a = bset.NewSafeSet("111", "222", "333", "444")
+		b = bset.NewSafeSet("222", "333", "444", "555")
+		c = bset.NewSafeSet("333", "444", "555", "666")
+	)
+	assert.Equal(t, []string{"111", "222", "333", "444", "555", "666"}, bslice.SortStrings(a.UnionSet(b, c).ToSlice()))
+}
+
+func TestSafeSet_ComplementSet(t *testing.T) {
+	var (
+		a = bset.NewSafeSet("111", "222", "333", "444")
+		b = bset.NewSafeSet("333", "444", "555", "666")
+	)
+	assert.Equal(t, []string{"555", "666"}, bslice.SortStrings(a.ComplementSet(b).ToSlice()))
+}

@@ -96,7 +96,9 @@ func TestSafeSet_UnionSet(t *testing.T) {
 func TestSafeSet_ComplementSet(t *testing.T) {
 	var (
 		a = bset.NewSafeSet("111", "222", "333", "444")
-		b = bset.NewSafeSet("333", "444", "555", "666")
+		b = bset.NewSafeSet("222", "333", "444", "555")
+		c = bset.NewSafeSet("333", "444", "555", "666")
 	)
-	assert.Equal(t, []string{"555", "666"}, bslice.SortStrings(a.ComplementSet(b).ToSlice()))
+	assert.Equal(t, []string{"555"}, bslice.SortStrings(a.ComplementSet(b).ToSlice()))
+	assert.Equal(t, []string{"555", "666"}, bslice.SortStrings(a.ComplementSet(c).ToSlice()))
 }

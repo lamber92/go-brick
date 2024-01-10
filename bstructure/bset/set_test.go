@@ -145,6 +145,12 @@ func TestComplementSet(t *testing.T) {
 			"444": {},
 		}
 		b = map[string]struct{}{
+			"222": {},
+			"333": {},
+			"444": {},
+			"555": {},
+		}
+		c = map[string]struct{}{
 			"333": {},
 			"444": {},
 			"555": {},
@@ -154,7 +160,12 @@ func TestComplementSet(t *testing.T) {
 	assert.Equal(t,
 		map[string]struct{}{
 			"555": {},
-			"666": {},
 		},
 		bset.ComplementSet(a, b))
+	assert.Equal(t,
+		map[string]struct{}{
+			"555": {},
+			"666": {},
+		},
+		bset.ComplementSet(a, c))
 }

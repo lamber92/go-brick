@@ -3,6 +3,7 @@ package bconfig
 import (
 	"context"
 	"fmt"
+
 	"go-brick/bconfig/benv"
 	"go-brick/bconfig/bstorage"
 	"go-brick/bconfig/bstorage/apollo"
@@ -41,7 +42,7 @@ func Init(opt Option) {
 		case bstorage.YAML:
 			initFromYAML()
 		case bstorage.APOLLO:
-			if err = initFromApollo(opt); err != nil {
+			if err = initFromApollo(); err != nil {
 				panic(err)
 			}
 		default:
@@ -55,7 +56,7 @@ func initFromYAML() {
 	Dynamic = yaml.NewDynamic()
 }
 
-func initFromApollo(opt Option) error {
+func initFromApollo() error {
 	basic, err := yaml.NewStatic().Load(context.Background(), "Apollo", Env.GetType().ToString())
 	if err != nil {
 		return err

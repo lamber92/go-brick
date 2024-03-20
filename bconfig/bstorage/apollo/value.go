@@ -1,7 +1,7 @@
 package apollo
 
 import (
-	"go-brick/bconfig"
+	"go-brick/bconfig/bstorage"
 	"go-brick/internal/json"
 	"time"
 
@@ -12,14 +12,14 @@ type defaultValue struct {
 	data string
 }
 
-func newDefaultValue(v any) bconfig.Value {
+func newDefaultValue(v any) bstorage.Value {
 	if s, ok := v.(string); ok {
 		return &defaultValue{data: s}
 	}
 	return &defaultValue{data: cast.ToString(v)}
 }
 
-func (d *defaultValue) Sub(key string) bconfig.Value {
+func (d *defaultValue) Sub(key string) bstorage.Value {
 	return &defaultValue{data: json.Get([]byte(d.data), key).ToString()}
 }
 

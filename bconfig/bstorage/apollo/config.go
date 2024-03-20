@@ -4,7 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"go-brick/bconfig"
+	"go-brick/bconfig/bstorage"
 	"go-brick/berror"
 	"go-brick/btrace"
 	"sync"
@@ -35,7 +35,7 @@ type apolloConfig struct {
 	sync.Mutex
 }
 
-func New(conf *Config, logger ...log.LoggerInterface) (bconfig.Config, error) {
+func New(conf *Config, logger ...log.LoggerInterface) (bstorage.Config, error) {
 	lgr := newDefaultLogger()
 	if len(logger) > 0 {
 		lgr = logger[0]
@@ -67,7 +67,11 @@ func newConfig(conf *Config) (*apolloConfig, error) {
 	}, nil
 }
 
-func (a *apolloConfig) Load(ctx context.Context, key string, namespace ...string) (out bconfig.Value, err error) {
+func (a *apolloConfig) GetType() bstorage.Type {
+	return bstorage.APOLLO
+}
+
+func (a *apolloConfig) Load(ctx context.Context, key string, namespace ...string) (out bstorage.Value, err error) {
 	ns := defaultApplication
 	if len(namespace) > 0 {
 		ns = namespace[0]
@@ -94,7 +98,7 @@ func (a *apolloConfig) Load(ctx context.Context, key string, namespace ...string
 	return
 }
 
-func (a *apolloConfig) RegisterOnChange(changeFunc bconfig.OnChangeFunc) {
+func (a *apolloConfig) RegisterOnChange(changeFunc bstorage.OnChangeFunc) {
 	hook := newDefaultListener(changeFunc)
 	a.client.AddChangeListener(hook)
 }

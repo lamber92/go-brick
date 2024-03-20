@@ -41,7 +41,7 @@ type StacktraceDepth int
 
 const (
 	// StacktraceFull captures the entire call stack, allocating more
-	// storage for it if needed.
+	// bstorage for it if needed.
 	StacktraceFull = -1
 	// StacktraceFirst captures only the first frame.
 	StacktraceFirst StacktraceDepth = 1
@@ -79,7 +79,7 @@ func captureStacktrace(skip int, depth StacktraceDepth) *stacktrace {
 
 	// runtime.Callers truncates the recorded stacktrace if there is no
 	// room in the provided slice. For the full stack trace, keep expanding
-	// storage until there are fewer frames than there is room.
+	// bstorage until there are fewer frames than there is room.
 	if depth == StacktraceFull {
 		pcs := stack.pcs
 		for numFrames == len(pcs) {
@@ -87,7 +87,7 @@ func captureStacktrace(skip int, depth StacktraceDepth) *stacktrace {
 			numFrames = runtime.Callers(skip+2, pcs)
 		}
 
-		// Discard old storage instead of returning it to the pool.
+		// Discard old bstorage instead of returning it to the pool.
 		// This will adjust the pool size over time if stack traces are
 		// consistently very deep.
 		stack.storage = pcs

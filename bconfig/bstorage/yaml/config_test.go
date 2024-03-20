@@ -1,7 +1,7 @@
 package yaml_test
 
 import (
-	"go-brick/bconfig/yaml"
+	"go-brick/bconfig/bstorage/yaml"
 	"go-brick/bcontext"
 	"go-brick/btrace"
 	"os"

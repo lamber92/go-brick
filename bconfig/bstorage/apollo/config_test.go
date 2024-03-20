@@ -2,8 +2,8 @@ package apollo_test
 
 import (
 	"context"
-	"go-brick/bconfig/apollo"
-	"go-brick/bconfig/yaml"
+	"go-brick/bconfig/bstorage/apollo"
+	"go-brick/bconfig/bstorage/yaml"
 	"go-brick/berror"
 	"go-brick/berror/bcode"
 	"sync"

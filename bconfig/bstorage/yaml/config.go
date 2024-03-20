@@ -3,7 +3,7 @@ package yaml
 import (
 	"context"
 	"fmt"
-	"go-brick/bconfig"
+	"go-brick/bconfig/bstorage"
 	"go-brick/berror"
 	"go-brick/blog/logger"
 	"go-brick/btrace"
@@ -39,13 +39,13 @@ func InitRootDir(dir string) {
 // NewStatic new a static config handler(load configuration once).
 // throughout the lifetime, the configuration is read only once, and the value is cached.
 // calling again will fetch the data in the cache.
-func NewStatic() bconfig.Config {
+func NewStatic() bstorage.Config {
 	return newConfig(false)
 }
 
 // NewDynamic new a dynamic config handler.
 // load real-time configuration values, but allow for slight delays.
-func NewDynamic() bconfig.Config {
+func NewDynamic() bstorage.Config {
 	return newConfig(true)
 }
 
@@ -61,10 +61,14 @@ type yamlConfig struct {
 	config    sync.Map
 	lock      sync.Locker
 	dynamic   bool
-	eventHook bconfig.OnChangeFunc
+	eventHook bstorage.OnChangeFunc
 }
 
-func (c *yamlConfig) Load(ctx context.Context, key string, filenames ...string) (out bconfig.Value, err error) {
+func (c *yamlConfig) GetType() bstorage.Type {
+	return bstorage.YAML
+}
+
+func (c *yamlConfig) Load(ctx context.Context, key string, filenames ...string) (out bstorage.Value, err error) {
 	var filename = defaultFilename
 	if len(filenames) > 0 {
 		filename = filenames[0]
@@ -124,7 +128,7 @@ func (c *yamlConfig) Load(ctx context.Context, key string, filenames ...string) 
 
 // RegisterOnChange register callback function for configuration changing notification
 // nb. this function is not thread-safe.
-func (c *yamlConfig) RegisterOnChange(f bconfig.OnChangeFunc) {
+func (c *yamlConfig) RegisterOnChange(f bstorage.OnChangeFunc) {
 	c.eventHook = f
 }
 
@@ -162,7 +166,7 @@ func (c *yamlConfig) generateDir() string {
 	return out
 }
 
-func (c *yamlConfig) handleResult(v *viper.Viper, key string) (bconfig.Value, error) {
+func (c *yamlConfig) handleResult(v *viper.Viper, key string) (bstorage.Value, error) {
 	sub := v.Sub(key)
 	if sub == nil {
 		return nil, c.notfoundError(key)

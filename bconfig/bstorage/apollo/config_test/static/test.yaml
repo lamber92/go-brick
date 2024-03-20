@@ -1,0 +1,9 @@
+Apollo:
+  Host: "http://www.example.com"
+  AppID: "xxx"
+  Cluster: "dev"
+  Namespace: "application"
+  IsBackup: true
+  Secret: "yyyyyy"
+  Label: ""
+  SyncTimeout: 5

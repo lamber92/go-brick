@@ -1,7 +1,7 @@
 package yaml
 
 import (
-	"go-brick/bconfig"
+	"go-brick/bconfig/bstorage"
 	"go-brick/btrace"
 	"go-brick/internal/json"
 
@@ -12,7 +12,7 @@ const (
 	traceModule btrace.Module = "yaml_config"
 )
 
-func newMetadata(namespace, k string, v bconfig.Value) *defaultMD {
+func newMetadata(namespace, k string, v bstorage.Value) *defaultMD {
 	return &defaultMD{
 		ModuleName: traceModule,
 		TypeName:   "yaml",

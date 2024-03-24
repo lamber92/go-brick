@@ -9,6 +9,7 @@ import (
 
 // Error Provide the interface for feeding back business error info
 type Error interface {
+	Chain
 	// Error output error information in string format.
 	Error() string
 	// Status get main status.

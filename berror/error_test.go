@@ -91,3 +91,23 @@ func TestIsCode(t *testing.T) {
 	assert.Equal(t, true, berror.IsCode(err4, bcode.NotFound))
 	assert.Equal(t, false, berror.IsCode(err4, bcode.Forbidden))
 }
+
+func TestTypeSwitch(t *testing.T) {
+	err := berror.NewInternalError(nil, "some error")
+	switch e := err.(type) {
+	case berror.Error:
+		t.Log("berror.Error", e)
+	case berror.Chain:
+		t.Log("berror.Chain", e)
+	}
+	// berror.Error {"code":500,"reason":"some error","detail":null,"next":null}
+
+	err2 := berror.NewInternalError(nil, "some error 2")
+	switch e := err2.(type) {
+	case berror.Chain:
+		t.Log("berror.Chain", e)
+	case berror.Error:
+		t.Log("berror.Error", e)
+	}
+	// berror.Chain {"code":500,"reason":"some error 2","detail":null,"next":null}
+}

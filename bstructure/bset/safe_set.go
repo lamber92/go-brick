@@ -13,9 +13,8 @@ type SafeSet[T comparable] interface {
 	// Has determine whether an element exists in the SafeSet
 	Has(item T) bool
 	// Contains determine whether certain elements exist in the SafeSet
-	// - if all elements exist, return the `nil` SafeSet and a `true` flag.
-	// - else if only some elements exist, return a new SafeSet with `existing elements` and a `true` flag.
-	// - else return the `nil` SafeSet and a `false` flag.
+	// - if all elements exist or only some elements exist, return a new SafeSet with hit elements and a `true` flag.
+	// - else return the `empty` SafeSet and a `false` flag.
 	Contains(item ...T) (SafeSet[T], bool)
 	// Clear remove all items
 	Clear()
@@ -30,6 +29,19 @@ type SafeSet[T comparable] interface {
 	ToSlice() []T
 	// Clone deep copy a new SafeSet
 	Clone() SafeSet[T]
+	// IntersectionSet return the intersection set of the source sets
+	// Example:
+	// A{1,2,3} ∩ B{2,3,4} = {2,3}
+	IntersectionSet(src ...SafeSet[T]) SafeSet[T]
+	// UnionSet return the union set of the source sets
+	// Example:
+	// A{1,2,3} ∪ B{2,3,4} = {1,2,3,4}
+	UnionSet(src ...SafeSet[T]) SafeSet[T]
+	// ComplementSet return the relative complement set of B to A
+	// Example:
+	// B{1,2,3} \ A{2,3,4} = {1}
+	// B{2,3,4} \ A{1,2,3} = {4}
+	ComplementSet(B SafeSet[T]) SafeSet[T]
 }
 
 type defaultSafeSet[T comparable] struct {
@@ -68,9 +80,9 @@ func (s *defaultSafeSet[T]) Delete(items ...T) {
 }
 
 func (s *defaultSafeSet[T]) Has(item T) bool {
-	s.Lock()
+	s.RLock()
 	_, ok := s.m[item]
-	s.Unlock()
+	s.RUnlock()
 	return ok
 }
 
@@ -90,7 +102,7 @@ func (s *defaultSafeSet[T]) Contains(items ...T) (SafeSet[T], bool) {
 	if len(m) > 0 {
 		return &defaultSafeSet[T]{m: m}, true
 	}
-	return nil, true
+	return &defaultSafeSet[T]{m: m}, false
 }
 
 func (s *defaultSafeSet[T]) Clear() {
@@ -122,4 +134,51 @@ func (s *defaultSafeSet[T]) ToSlice() []T {
 
 func (s *defaultSafeSet[T]) Clone() SafeSet[T] {
 	return NewSafeSet(s.ToSlice()...)
+}
+
+func (s *defaultSafeSet[T]) IntersectionSet(src ...SafeSet[T]) SafeSet[T] {
+	if len(src) == 0 {
+		return s
+	}
+	r := s.Clone()
+	for _, set := range src {
+		sl := make([]T, 0, set.Len())
+		for _, k := range set.ToSlice() {
+			if r.Has(k) {
+				sl = append(sl, k)
+			}
+		}
+		r = NewSafeSet(sl...)
+	}
+	return r
+}
+
+func (s *defaultSafeSet[T]) UnionSet(src ...SafeSet[T]) SafeSet[T] {
+	if len(src) == 0 {
+		return NewSafeSet[T]()
+	}
+	r := s.Clone()
+	for _, set := range src {
+		sl := make([]T, 0, set.Len())
+		for _, k := range set.ToSlice() {
+			if !r.Has(k) {
+				sl = append(sl, k)
+			}
+		}
+		r.Add(sl...)
+	}
+	return r
+}
+
+func (s *defaultSafeSet[T]) ComplementSet(B SafeSet[T]) SafeSet[T] {
+	if B == nil {
+		return s
+	}
+	sl := make([]T, 0, B.Len())
+	for _, k := range B.ToSlice() {
+		if !s.Has(k) {
+			sl = append(sl, k)
+		}
+	}
+	return NewSafeSet(sl...)
 }

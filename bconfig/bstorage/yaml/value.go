@@ -1,7 +1,7 @@
 package yaml
 
 import (
-	"go-brick/bconfig"
+	"go-brick/bconfig/bstorage"
 	"go-brick/internal/json"
 	"time"
 
@@ -12,11 +12,11 @@ type defaultValue struct {
 	data *viper.Viper
 }
 
-func newDefaultValue(v *viper.Viper) bconfig.Value {
+func newDefaultValue(v *viper.Viper) bstorage.Value {
 	return &defaultValue{data: v}
 }
 
-func (d *defaultValue) Sub(key string) bconfig.Value {
+func (d *defaultValue) Sub(key string) bstorage.Value {
 	return &defaultValue{data: d.data.Sub(key)}
 }
 

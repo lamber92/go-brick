@@ -1,17 +1,17 @@
 package apollo
 
 import (
-	"go-brick/bconfig"
 	"go-brick/internal/json"
 
 	"github.com/apolloconfig/agollo/v4/storage"
+	"go-brick/bconfig/bstorage"
 )
 
 type defaultListener struct {
-	eventHook bconfig.OnChangeFunc
+	eventHook bstorage.OnChangeFunc
 }
 
-func newDefaultListener(eventHook bconfig.OnChangeFunc) *defaultListener {
+func newDefaultListener(eventHook bstorage.OnChangeFunc) *defaultListener {
 	return &defaultListener{eventHook: eventHook}
 }
 
@@ -33,7 +33,7 @@ var mapChangeTypeToDesc = map[storage.ConfigChangeType]string{
 	storage.DELETED:  "DELETE",
 }
 
-// OnChange 增加变更监控
+// OnChange existing config has been modified callback method
 func (listener *defaultListener) OnChange(event *storage.ChangeEvent) {
 	innerEvent := &ChangeEvent{
 		Namespace:      event.Namespace,
@@ -53,7 +53,8 @@ func (listener *defaultListener) OnChange(event *storage.ChangeEvent) {
 	listener.eventHook(eventSrc)
 }
 
-// OnNewestChange 监控最新变更
+// OnNewestChange new config has been added callback method
+// TODO:
 func (listener *defaultListener) OnNewestChange(event *storage.FullChangeEvent) {
 	return
 }

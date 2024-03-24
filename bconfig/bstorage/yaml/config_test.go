@@ -1,7 +1,7 @@
 package yaml_test
 
 import (
-	"go-brick/bconfig/yaml"
+	"go-brick/bconfig/bstorage/yaml"
 	"go-brick/bcontext"
 	"go-brick/btrace"
 	"os"
@@ -111,7 +111,7 @@ func TestNewDynamic(t *testing.T) {
 	assert.Equal(t, iii, origValue)
 
 	modifyConfig := func(old, new string) {
-		filePath := "./config_test/dynamic/test.yaml" // 文件路径
+		filePath := "./config_test/dynamic/fat.yaml" // 文件路径
 		content, err := os.ReadFile(filePath)
 		if err != nil {
 			t.Fatal(err)

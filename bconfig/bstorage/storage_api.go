@@ -1,8 +1,16 @@
-package bconfig
+package bstorage
 
 import (
 	"context"
 	"time"
+)
+
+// Type built-in config type
+type Type int
+
+const (
+	YAML   Type = 1
+	APOLLO Type = 2
 )
 
 // Value interface.
@@ -39,6 +47,8 @@ type Value interface {
 type OnChangeFunc func(event string)
 
 type Config interface {
+	// GetType get configuration type
+	GetType() Type
 	// Load load configuration Value
 	Load(ctx context.Context, key string, namespace ...string) (Value, error)
 	// RegisterOnChange register callback function for configuration changing notification

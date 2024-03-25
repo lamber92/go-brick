@@ -115,7 +115,7 @@ func (c *Consumer) SetMaxRetryTimes(times uint) *Consumer {
 }
 
 // SetHandleRetryTimeInterval 设置重试时间间隔策略
-func (c *Consumer) SetHandleRetryTimeInterval(f func() time.Duration) *Consumer {
+func (c *Consumer) SetHandleRetryTimeInterval(f func(times uint) time.Duration) *Consumer {
 	c.retryHdr.timeIntervalFunc = f
 	return c
 }
@@ -134,6 +134,10 @@ func (c *Consumer) SetBatchFetchMessagePeriod(duration time.Duration) *Consumer 
 
 func (c *Consumer) GetID() uint {
 	return c.id
+}
+
+func (c *Consumer) GetKey() string {
+	return c.client.conf.Key
 }
 
 // Work only allowed to be consumed messages in one goroutine
@@ -322,7 +326,7 @@ func (c *Consumer) monitor() {
 				logger.Infra.Infof(c.buildLogPrefix() + "monitor stop")
 				return
 			default:
-				err := c.Recover()
+				err := c.recover()
 				if err == nil {
 					break LOOP
 				}
@@ -334,12 +338,12 @@ func (c *Consumer) monitor() {
 	}
 }
 
-// Recover automatic recovery
+// recover automatic recovery
 // automatically re-establish the underlying connection and retry consumption
-func (c *Consumer) Recover() error {
+func (c *Consumer) recover() error {
 	c.Lock()
 	defer c.Unlock()
-	// ff the shutdown process is being executed, return directly
+	// if the shutdown process is being executed, return directly
 	if c.existing {
 		return nil
 	}

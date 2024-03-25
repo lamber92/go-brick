@@ -30,13 +30,13 @@ func newClient(conf *config.Config, id uint) (client *Client, err error) {
 	if err = client.initChannel(); err != nil {
 		return
 	}
-	if err = client.bindExchange(); err != nil {
+	if err = client.initExchange(); err != nil {
 		return
 	}
-	if err = client.bindQueue(); err != nil {
+	if err = client.initQueue(); err != nil {
 		return
 	}
-	if err = client.newReader(); err != nil {
+	if err = client.initReader(); err != nil {
 		return
 	}
 	return
@@ -44,17 +44,17 @@ func newClient(conf *config.Config, id uint) (client *Client, err error) {
 
 // recover reestablish the underlying connection and reinitialize the queue
 func (cli *Client) recover() (err error) {
-	logger.Infra.Infof(cli.buildLogPrefix() + "recover now")
+	logger.Infra.Infof(cli.buildLogPrefix() + "try to recover now")
 	if err = cli.initChannel(); err != nil {
 		return
 	}
-	if err = cli.bindExchange(); err != nil {
+	if err = cli.initExchange(); err != nil {
 		return
 	}
-	if err = cli.bindQueue(); err != nil {
+	if err = cli.initQueue(); err != nil {
 		return
 	}
-	if err = cli.newReader(); err != nil {
+	if err = cli.initReader(); err != nil {
 		return
 	}
 	return
@@ -72,8 +72,8 @@ func (cli *Client) initChannel() (err error) {
 	return
 }
 
-// bindExchange
-func (cli *Client) bindExchange() error {
+// initExchange
+func (cli *Client) initExchange() error {
 	if err := cli.channel.ExchangeDeclare(
 		cli.subConf.Exchange,     // name of the exchange
 		cli.subConf.ExchangeType, // type
@@ -88,8 +88,8 @@ func (cli *Client) bindExchange() error {
 	return nil
 }
 
-// bindQueue
-func (cli *Client) bindQueue() error {
+// initQueue
+func (cli *Client) initQueue() error {
 	queue, err := cli.channel.QueueDeclare(
 		cli.subConf.Queue,     // name of the queue
 		true,                  // durable
@@ -119,7 +119,7 @@ func (cli *Client) bindQueue() error {
 	return nil
 }
 
-func (cli *Client) newReader() (err error) {
+func (cli *Client) initReader() (err error) {
 	cli.reader, err = cli.channel.Consume(
 		cli.subConf.Queue,
 		cli.subConf.Consumer, // must use different consumer_tag

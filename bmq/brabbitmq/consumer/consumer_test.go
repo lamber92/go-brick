@@ -2,38 +2,38 @@ package consumer
 
 import (
 	"fmt"
+	"go-brick/bmq/brabbitmq/config"
 	"testing"
 	"time"
 
 	amqp "github.com/rabbitmq/amqp091-go"
-	"gitlab.yishou.com/yishou-basic/kit-go/canal"
-	rabbitmq "gitlab.yishou.com/yishou-basic/kit-go/context/rabbitmq_v2"
-	"gitlab.yishou.com/yishou-basic/kit-go/log/logger"
 )
 
-// testFakeDisconnect 纯测试服方法，断网测试方法
-func (c *Consumer) testFakeDisconnect() error {
-	conf := c.client.conf.Extra.(*ConsumerConfig)
+// _testSimulateDisconnect
+// pure testing method, simulating network disconnection scenarios
+func (c *Consumer) _testSimulateDisconnect() error {
+	conf := c.client.conf.Extra.(*config.ConsumerConfig)
 	// will close() the deliver channel
 	if err := c.client.channel.Cancel(conf.Consumer, true); err != nil {
-		return fmt.Errorf("RabbitMQ-Consumer[%s] cancel failed: %v", c.client.conf.Key, err)
+		return err
 	}
 	if err := c.client.connection.Close(); err != nil {
-		return fmt.Errorf("RabbitMQ-Consumer[%s] connection close. err: %v", c.client.conf.Key, err)
+		return err
 	}
-	defer logger.Common.Infof("RabbitMQ-Consumer[%s] shutdown OK", c.client.conf.Key)
 	return nil
 }
 
-// testFakeDisconnect 纯测试服方法，断开通道测试方法
-func (c *Consumer) testFakeCloseChannel() error {
+// _testSimulateCancelChannel
+// pure test method, simulate the channel is deleted
+func (c *Consumer) _testSimulateCancelChannel() error {
 	// will close() the deliver channel
-	_ = c.client.channel.Close()
-	defer logger.Common.Infof("RabbitMQ-Consumer[%s] channel close OK", c.client.conf.Key)
+	if err := c.client.channel.Close(); err != nil {
+		return err
+	}
 	return nil
 }
 
-func TestConsumerRunOnce(t *testing.T) {
+func TestConsumerWork(t *testing.T) {
 	if err := updateHub(Default, &mqConfig{
 		Url:   "amqp://guest:guest@192.168.1.245:5672/",
 		VHost: "erp",

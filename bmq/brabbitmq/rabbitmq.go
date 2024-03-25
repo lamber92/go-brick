@@ -3,8 +3,13 @@ package brabbitmq
 import (
 	"context"
 	"fmt"
+	"go-brick/berrgroup"
+	"go-brick/berror"
+	"go-brick/blog/logger"
 	"go-brick/bmq/brabbitmq/config"
 	"go-brick/bmq/brabbitmq/consumer"
+	"go-brick/bmq/brabbitmq/producer"
+	"go-brick/bstructure/bset"
 	"sync"
 )
 
@@ -13,7 +18,7 @@ var (
 	producerHub sync.Map // map[string]*Producer
 )
 
-// Init init RabbitMQ clients
+// Init connect to RabbitMQ and init all producers and consumers
 func Init(ctx context.Context, keys []string, namespace ...string) error {
 	f := func(key string) error {
 		conf, err := config.LoadConfig(ctx, key, namespace...)
@@ -33,16 +38,15 @@ func Init(ctx context.Context, keys []string, namespace ...string) error {
 	return nil
 }
 
-func updateHub(key string, conf *config.Config) (err error) {
+func updateHub(key string, conf *config.Config) error {
 	switch conf.Type {
 	case config.TypeConsumer:
 		if _, ok := consumerHub.Load(key); ok {
 			return nil
 		}
-		consumerConf := conf.Extra.(*config.ConsumerConfig)
-
-		consumers := make([]*consumer.Consumer, 0, consumerConf.ConsumerCount)
-		for idx := 0; idx < consumerConf.ConsumerCount; idx++ {
+		subConf := conf.Extra.(*config.ConsumerConfig)
+		consumers := make([]*consumer.Consumer, 0, subConf.ConsumerCount)
+		for idx := 0; idx < subConf.ConsumerCount; idx++ {
 			newConsumer, err := consumer.New(conf, uint(idx))
 			if err != nil {
 				return err
@@ -50,80 +54,139 @@ func updateHub(key string, conf *config.Config) (err error) {
 			consumers = append(consumers, newConsumer)
 		}
 		consumerHub.Store(key, consumers)
-
-	case TypeProducer:
-		if _, ok := producerHub[key]; ok {
+	case config.TypeProducer:
+		if _, ok := producerHub.Load(key); ok {
 			return nil
 		}
-		cli, err := newClient(conf, 0)
+		newProducer, err := producer.New(conf, 0)
 		if err != nil {
 			return err
 		}
-		producer, err := cli.newSimpleProducer()
-		if err != nil {
-			return err
-		}
-		cli.producer = producer
-		producerHub[key] = cli
-		// 拉起通知协程
-		go handlerNotifyClose(cli)
-
+		producerHub.Store(key, newProducer)
 	default:
 		return fmt.Errorf("unsupported config type: %s", conf.Type)
 	}
-
 	return nil
 }
 
-// GetConsumer 获取已初始化的消费者实例
+// GetConsumer get the initialized consumer instance
 func GetConsumer(key string) ([]*consumer.Consumer, error) {
-	if c, ok := consumerHub[key]; !ok {
-		return nil, fmt.Errorf("could not find consumer-Key: %s", key)
-	} else {
-		consumerSlice := make([]*Consumer, 0, len(c))
-		for _, v := range c {
-			consumerSlice = append(consumerSlice, v.consumer)
-		}
-		return consumerSlice, nil
+	v, ok := consumerHub.Load(key)
+	if !ok {
+		return nil, berror.NewNotFound(nil, fmt.Sprintf("[rabbitmq-consumer][%s] has not been initialized yet!", key))
 	}
+	res, ok := v.([]*consumer.Consumer)
+	if !ok {
+		return nil, berror.NewInternalError(nil, fmt.Sprintf("[rabbitmq-consumer][%s] has invalid instance type", key))
+	}
+	return res, nil
 }
 
-// GetProducer 获取已初始化的生产者实例
-func GetProducer(key string) (*Producer, error) {
-	if c, ok := producerHub[key]; !ok {
-		return nil, fmt.Errorf("batchCount not find producer-key: %s", key)
-	} else {
-		return c.producer, nil
+// GetProducer get the initialized producer instance
+func GetProducer(key string) (*producer.Producer, error) {
+	v, ok := producerHub.Load(key)
+	if !ok {
+		return nil, berror.NewNotFound(nil, fmt.Sprintf("[rabbitmq-producer][%s] has not been initialized yet!", key))
 	}
+	res, ok := v.(*producer.Producer)
+	if !ok {
+		return nil, berror.NewInternalError(nil, fmt.Sprintf("[rabbitmq-producer][%s] has invalid instance type", key))
+	}
+	return res, nil
 }
 
-// GetProducerGroup 获取已初始化的一组生产者实例
-// 如果有一个不成功，返回nil。否则按keys中顺序压入切片中
-func GetProducerGroup(keys []string) ([]*Producer, error) {
-	r := make([]*Producer, 0, len(keys))
-	for _, key := range keys {
-		if c, ok := producerHub[key]; !ok {
-			return nil, fmt.Errorf("batchCount not find producer-key: %s", key)
-		} else {
-			r = append(r, c.producer)
-		}
+func CloseConsumer(key string) error {
+	v, ok := consumerHub.Load(key)
+	if !ok {
+		return berror.NewNotFound(nil, fmt.Sprintf("[rabbitmq-consumer][%s] has not been initialized yet!", key))
 	}
-	return r, nil
-}
-
-// Close 主动关闭RabbitMQ连接
-func Close() (err error) {
-	for _, cList := range consumerHub {
-		for _, v := range cList {
-			if err = v.ShutdownConsumers(); err != nil {
+	list, ok := v.([]*consumer.Consumer)
+	if !ok {
+		return berror.NewInternalError(nil, fmt.Sprintf("[rabbitmq-consumer][%s] has invalid instance type", key))
+	}
+	eg, ctx := berrgroup.WithContext(context.Background())
+	defer ctx.Cancel()
+	for _, tmp := range list {
+		cons := tmp
+		eg.Go(func() error {
+			if err := cons.Close(); err != nil {
 				return err
 			}
-		}
+			return nil
+		})
 	}
-	for _, v := range producerHub {
-		if err = v.ShutdownProducers(); err != nil {
-			return err
-		}
+	if err := eg.Wait(); err != nil {
+		return err
 	}
+	consumerHub.Delete(key)
+	return nil
+}
+
+func CloseProducer(key string) error {
+	v, ok := producerHub.Load(key)
+	if !ok {
+		return berror.NewNotFound(nil, fmt.Sprintf("[rabbitmq-producer][%s] has not been initialized yet!", key))
+	}
+	prod, ok := v.(*producer.Producer)
+	if !ok {
+		return berror.NewInternalError(nil, fmt.Sprintf("[rabbitmq-producer][%s] has invalid instance type", key))
+	}
+	if err := prod.Close(); err != nil {
+		return err
+	}
+	producerHub.Delete(key)
+	return nil
+}
+
+// Close exit all rabbitmq producers and consumers
+func Close() {
+	eg, ctx := berrgroup.WithContext(context.Background())
+	defer ctx.Cancel()
+
+	closedKeys := bset.NewSafeSet[string]()
+	consumerHub.Range(func(key, value any) bool {
+		closedKeys.Add(key.(string))
+		tmp, ok := value.([]*consumer.Consumer)
+		if !ok {
+			logger.Infra.Errorf("[rabbitmq-consumer][%s] has invalid instance type", key)
+			return true
+		}
+		for _, v := range tmp {
+			cons := v
+			eg.Go(func() error {
+				if err := cons.Close(); err != nil {
+					closedKeys.Delete(key.(string))
+					return err
+				}
+				return nil
+			})
+		}
+		return true
+	})
+	for _, key := range closedKeys.ToSlice() {
+		consumerHub.Delete(key)
+	}
+
+	closedKeys.Clear()
+	producerHub.Range(func(key, value any) bool {
+		closedKeys.Add(key.(string))
+		tmp, ok := value.(*producer.Producer)
+		if !ok {
+			logger.Infra.Errorf("[rabbitmq-producer][%s] has invalid instance type", key)
+			return true
+		}
+		eg.Go(func() error {
+			if err := tmp.Close(); err != nil {
+				closedKeys.Delete(key.(string))
+				return err
+			}
+			return nil
+		})
+		return true
+	})
+	for _, key := range closedKeys.ToSlice() {
+		producerHub.Delete(key)
+	}
+
 	return
 }

@@ -34,7 +34,6 @@ type ProducerConfig struct {
 	Exchange     string
 	ExchangeType string
 	RoutingKey   string
-	Reliable     bool // requires server receipt confirmation
 	Persistent   bool // persistent messages
 	QueueArgs    map[string]interface{}
 }

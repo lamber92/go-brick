@@ -16,6 +16,7 @@ import (
 const (
 	defaultMaxWaitConfirmTime = time.Second * 2 //
 	defaultMaxWaitPublishTime = time.Second * 2
+	defaultMaxWaitCloseTime   = time.Second * 5
 )
 
 func init() {
@@ -29,6 +30,8 @@ func init() {
 
 type Producer struct {
 	client *Client
+	//
+	recovering bool
 	//
 	existing    bool
 	exitMonitor chan struct{}
@@ -163,17 +166,24 @@ func (p *Producer) Publish(ctx context.Context, data *amqp.Publishing) (err erro
 }
 
 func (p *Producer) publish(ctx context.Context, data *amqp.Publishing) (err error) {
-	p.publishTimer.Reset(defaultMaxWaitPublishTime)
-	defer p.publishTimer.Stop()
 	select {
 	case _, ok := <-p.exitPublish:
 		if ok {
 			close(p.exitPublish)
 		}
 		return berror.NewClientClose(nil, p.buildLogPrefix()+"client is going to exit")
-	case <-p.publishTimer.C:
-		return berror.NewGatewayTimeout(nil, p.buildLogPrefix()+"publish timeout")
 	default:
+		// TODO:
+		// There is a fatal problem in this library.
+		// Publish() does not handle timeouts based on context internally.
+		// The publish action will be permanently blocked because the channel is closed.
+		// This issue needs to be tracked: https://github.com/rabbitmq/amqp091-go/issues/225.
+		// However, v2.0.0 has not been released yet.
+		//
+		// Here is a rough way to deal with it for the time being.
+		if p.recovering {
+			return berror.NewClientClose(nil, p.buildLogPrefix()+"client is recovering")
+		}
 		if err = p.client.channel.PublishWithContext(
 			ctx,
 			p.client.subConf.Exchange,   // publish to an exchange
@@ -219,18 +229,22 @@ func (p *Producer) monitor() {
 		)
 		select {
 		case notifyErr, ok := <-p.client.connection.NotifyClose(make(chan *amqp.Error)):
+			_ = p.client.connection.Close()
+			_ = p.client.channel.Close()
 			if ok {
 				notification = notifyErr.Error()
 			}
 			logger.Infra.Infof(p.buildLogPrefix()+"connection has been closed: %s", notification)
 		case notifyErr, ok := <-p.client.channel.NotifyClose(make(chan *amqp.Error)):
 			_ = p.client.connection.Close()
+			_ = p.client.channel.Close()
 			if ok {
 				notification = notifyErr.Error()
 			}
 			logger.Infra.Infof(p.buildLogPrefix()+"channel has been closed: %s", notification)
 		case notification, _ = <-p.client.channel.NotifyCancel(make(chan string)):
 			_ = p.client.connection.Close()
+			_ = p.client.channel.Close()
 			logger.Infra.Infof(p.buildLogPrefix()+"queue has been deleted: %s", notification)
 		case _, ok := <-p.exitMonitor:
 			if ok {
@@ -271,10 +285,12 @@ func (p *Producer) recover() error {
 	if p.existing {
 		return nil
 	}
+	p.recovering = true
 	// try to restore the connection
 	if err := p.client.recover(); err != nil {
 		return err
 	}
+	p.recovering = false
 	logger.Infra.Info(p.buildLogPrefix() + "recover success")
 	return nil
 }

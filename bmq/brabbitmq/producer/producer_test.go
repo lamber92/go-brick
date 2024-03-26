@@ -21,7 +21,7 @@ const (
 	key2 = "test_rabbitmq_producer_2"
 )
 
-func TestPushWithConfirm(t *testing.T) {
+func TestPublishWithConfirm(t *testing.T) {
 	p1, err := _testNewProducer1()
 	if err != nil {
 		t.Fatal(err)
@@ -65,7 +65,7 @@ func TestPushWithConfirm(t *testing.T) {
 	g.Wait()
 }
 
-func TestPushWithoutConfirm(t *testing.T) {
+func TestPublishWithoutConfirm(t *testing.T) {
 	p1, err := New(&config.Config{
 		Url:   url,
 		VHost: vhost,

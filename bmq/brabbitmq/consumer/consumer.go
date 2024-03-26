@@ -304,15 +304,15 @@ func (c *Consumer) monitor() {
 		)
 		select {
 		case notifyErr = <-c.client.connection.NotifyClose(make(chan *amqp.Error)):
-			logger.Infra.Infof(c.buildLogPrefix()+"connection closed: %v", notifyErr)
+			logger.Infra.Infof(c.buildLogPrefix()+"connection has been closed: %v", notifyErr)
 		case notifyErr = <-c.client.channel.NotifyClose(make(chan *amqp.Error)):
 			_ = c.client.connection.Close()
-			logger.Infra.Infof(c.buildLogPrefix()+"channel closed: %v", notifyErr)
+			logger.Infra.Infof(c.buildLogPrefix()+"channel has been closed: %v", notifyErr)
 		case _, ok := <-c.exitMonitor:
 			if ok {
 				close(c.exitMonitor)
 			}
-			logger.Infra.Infof(c.buildLogPrefix() + "monitor go to exit")
+			logger.Infra.Infof(c.buildLogPrefix() + "monitor exit")
 			return
 		}
 
@@ -386,6 +386,8 @@ func (c *Consumer) Close() error {
 	if c.existing {
 		return berror.NewInternalError(nil, c.buildLogPrefix()+"has been closed")
 	}
+	c.existing = true
+
 	if c.exitMonitor != nil {
 		c.exitMonitor <- struct{}{}
 	}
@@ -397,7 +399,6 @@ func (c *Consumer) Close() error {
 	}
 	c.retryHdr.Close()
 
-	c.existing = true
 	logger.Infra.Infof(c.buildLogPrefix() + "shutdown success")
 	return nil
 }

@@ -3,6 +3,7 @@ package producer
 import (
 	"context"
 	"go-brick/berror"
+	"go-brick/berror/bcode"
 	"go-brick/blog/logger"
 	"go-brick/bmq/brabbitmq/config"
 	"strconv"
@@ -15,6 +16,15 @@ import (
 const (
 	defaultMaxWaitConfirmTime = time.Second * 2 //
 )
+
+func init() {
+	if err := berror.RegisterCustomizedMapping(
+		amqp.ErrClosed,
+		berror.NewClientClose(nil, amqp.ErrClosed.Error()),
+	); err != nil {
+		panic(err)
+	}
+}
 
 type Producer struct {
 	client *Client
@@ -61,7 +71,7 @@ func newDefaultProducer(cli *Client) (*Producer, error) {
 		timeIntervalFunc: defaultRetryTimeInterval,
 		//
 		confirmTimer: time.NewTimer(0),
-		exitConfirm:  make(chan struct{}),
+		exitConfirm:  make(chan struct{}, 1), // because the consumer of this pipe is not resident, a buffer is needed, otherwise the producer will block.
 		//
 		trace:     true,
 		traceFunc: defaultTraceFunc,
@@ -101,13 +111,16 @@ func (p *Producer) Push(ctx context.Context, data *amqp.Publishing) (err error) 
 	if p.trace {
 		begin := time.Now()
 		defer func() {
-			p.traceFunc(ctx, data, time.Since(begin))
+			p.traceFunc(ctx, err, data, time.Since(begin))
 		}()
 	}
 
 	for ; times <= p.maxRetryTimes; times++ {
 		if times > 0 {
 			_ = <-time.After(p.timeIntervalFunc(times))
+		}
+		if p.existing {
+			return berror.NewClientClose(nil, p.buildLogPrefix()+"client is going to exit")
 		}
 		if err = p.client.channel.PublishWithContext(
 			ctx,
@@ -121,17 +134,35 @@ func (p *Producer) Push(ctx context.Context, data *amqp.Publishing) (err error) 
 			logger.Infra.WithError(err).
 				With(logger.NewField().String("body", string(data.Body))).
 				With(logger.NewField().String("message_id", data.MessageId)).
-				Warn("")
+				Warn("push message fail")
 			continue
 		}
 		if !p.client.subConf.NoConfirm {
 			confirmation, err2 := p.getConfirmation()
-			if err2 != nil || !confirmation.Ack {
+			if err2 != nil {
 				err = err2
+				// at this point, if get an error because the client connection is interrupted,
+				// there is no need to return an error because the message has most likely been delivered.
+				//
+				// if return err and push message again,
+				// the message will be duplicated;
+				// else, it will cause the message to be lost.
+				// the latter is chosen here.
+				if berror.IsCode(err, bcode.ClientClosed) {
+					return nil
+				}
+				err = berror.NewInternalError(err, "get message confirmation fail")
 				logger.Infra.WithError(err).
 					With(logger.NewField().String("body", string(data.Body))).
 					With(logger.NewField().String("message_id", data.MessageId)).
-					Warn("")
+					Warn("get message confirmation fail")
+				continue
+			} else if !confirmation.Ack {
+				err = berror.NewInternalError(err, "push message than rabbitmq server return nack")
+				logger.Infra.WithError(err).
+					With(logger.NewField().String("body", string(data.Body))).
+					With(logger.NewField().String("message_id", data.MessageId)).
+					Warn("push message fail")
 				continue
 			}
 		}
@@ -142,9 +173,6 @@ func (p *Producer) Push(ctx context.Context, data *amqp.Publishing) (err error) 
 
 // getConfirmation receive the response from rabbitmq-server after receiving the push message
 func (p *Producer) getConfirmation() (amqp.Confirmation, error) {
-	if p.existing {
-		return amqp.Confirmation{}, berror.NewClientClose(nil, p.buildLogPrefix()+"confirm is going to exit")
-	}
 	p.confirmTimer.Reset(defaultMaxWaitConfirmTime)
 	select {
 	case _, ok := <-p.exitConfirm:
@@ -173,15 +201,15 @@ func (p *Producer) monitor() {
 		)
 		select {
 		case notifyErr = <-p.client.connection.NotifyClose(make(chan *amqp.Error)):
-			logger.Infra.Infof(p.buildLogPrefix()+"connection closed: %v", notifyErr)
+			logger.Infra.Infof(p.buildLogPrefix()+"connection has been closed: %v", notifyErr)
 		case notifyErr = <-p.client.channel.NotifyClose(make(chan *amqp.Error)):
 			_ = p.client.connection.Close()
-			logger.Infra.Infof(p.buildLogPrefix()+"channel closed: %v", notifyErr)
+			logger.Infra.Infof(p.buildLogPrefix()+"channel has been closed: %v", notifyErr)
 		case _, ok := <-p.exitMonitor:
 			if ok {
 				close(p.exitMonitor)
 			}
-			logger.Infra.Infof(p.buildLogPrefix() + "monitor go to exit")
+			logger.Infra.Infof(p.buildLogPrefix() + "monitor exit")
 			return
 		}
 
@@ -231,6 +259,8 @@ func (p *Producer) Close() error {
 	if p.existing {
 		return berror.NewInternalError(nil, p.buildLogPrefix()+"has been closed")
 	}
+	p.existing = true
+
 	if p.exitMonitor != nil {
 		p.exitMonitor <- struct{}{}
 	}
@@ -241,7 +271,6 @@ func (p *Producer) Close() error {
 	if err := p.client.close(); err != nil {
 		return err
 	}
-	p.existing = true
 
 	logger.Infra.Infof(p.buildLogPrefix() + "shutdown success")
 	return nil

@@ -209,6 +209,15 @@ func NewClientClose(err error, reason string, detail ...any) error {
 	return NewWithSkip(err, bstatus.New(bcode.ClientClosed, reason, ds), 1)
 }
 
+// NewAlreadyExists create a already exists error
+func NewAlreadyExists(err error, reason string, detail ...any) error {
+	var ds any = nil
+	if len(detail) > 0 {
+		ds = detail[0]
+	}
+	return NewWithSkip(err, bstatus.New(bcode.AlreadyExists, reason, ds), 1)
+}
+
 // NewInternalError create a internal error
 func NewInternalError(err error, reason string, detail ...any) error {
 	var ds any = nil

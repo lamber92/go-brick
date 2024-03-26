@@ -10,7 +10,10 @@ import (
 	"gorm.io/gorm"
 )
 
-var defConv Converter = newDefaultConverter()
+var (
+	defConv              Converter = newDefaultConverter()
+	defCustomizedMapping           = sync.Map{}
+)
 
 // ReplaceConverter replace built-in Converter impl
 func ReplaceConverter(c Converter) {
@@ -21,6 +24,15 @@ func ReplaceConverter(c Converter) {
 // nb. if you need this Hook, call it when you initialize the program.
 func RegisterConvHook(hook HookFunc) {
 	defConv.Hook(hook)
+}
+
+// RegisterCustomizedMapping register customized mapping for source err -> target err
+func RegisterCustomizedMapping(src error, target error) error {
+	if _, ok := defCustomizedMapping.Load(src); ok {
+		return NewAlreadyExists(nil, "conflict occurs, source key already exists")
+	}
+	defCustomizedMapping.Store(src, target)
+	return nil
 }
 
 // Convert according to the built-in rules, convert the incoming error to Error.
@@ -68,8 +80,10 @@ func (dc *defaultConverter) Convert(err error, reason string, detail any, option
 		return dc.hook(err, reason, detail, options...)
 	}
 
-	// !!! built-in processing logic !!!
-
+	// TODO: Transfer the following business error codes to a custom error code mapping table
+	if tmp, ok := defCustomizedMapping.Load(err); ok {
+		return tmp.(error)
+	}
 	// check gorm/redis error
 	switch err {
 	case gorm.ErrRecordNotFound, redis.Nil:

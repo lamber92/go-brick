@@ -10,10 +10,10 @@ import (
 	"go.uber.org/zap/zapcore"
 )
 
-type TraceFunc func(ctx context.Context, data *amqp.Publishing, since time.Duration)
+type TraceFunc func(ctx context.Context, err error, data *amqp.Publishing, since time.Duration)
 
-func defaultTraceFunc(ctx context.Context, data *amqp.Publishing, since time.Duration) {
-	btrace.AppendMDIntoCtx(ctx, newTraceMD(data.Type, string(data.Body), since.Milliseconds()))
+func defaultTraceFunc(ctx context.Context, err error, data *amqp.Publishing, since time.Duration) {
+	btrace.AppendMDIntoCtx(ctx, newTraceMD(data.Type, err, string(data.Body), since.Milliseconds()))
 }
 
 type trace struct {
@@ -21,14 +21,16 @@ type trace struct {
 	typ    string
 	body   string
 	cost   int64
+	err    error
 }
 
-func newTraceMD(typ, body string, cost int64) btrace.Metadata {
+func newTraceMD(typ string, err error, body string, cost int64) btrace.Metadata {
 	return &trace{
 		module: "rabbitmq-producer",
 		typ:    typ,
 		body:   body,
 		cost:   cost,
+		err:    err,
 	}
 }
 
@@ -40,18 +42,16 @@ func (t *trace) String() string {
 	buff := bufferpool.Get()
 	buff.AppendString("module: ")
 	buff.AppendString(string(t.module))
-	buff.AppendByte(',')
-	buff.AppendByte(' ')
-	buff.AppendString("type: ")
+	buff.AppendString(" | type: ")
 	buff.AppendString(t.typ)
-	buff.AppendByte(',')
-	buff.AppendByte(' ')
-	buff.AppendString("body: ")
+	buff.AppendString(" | body: ")
 	buff.AppendString(t.body)
-	buff.AppendByte(',')
-	buff.AppendByte(' ')
-	buff.AppendString("cost: ")
+	buff.AppendString(" | cost: ")
 	buff.AppendInt(t.cost)
+	if t.err != nil {
+		buff.AppendString(" | err: ")
+		buff.AppendString(t.err.Error())
+	}
 	out := buff.String()
 	buff.Free()
 	return out
@@ -65,5 +65,10 @@ func (t *trace) MarshalLogObject(enc zapcore.ObjectEncoder) error {
 	enc.AddString("type", t.typ)
 	enc.AddString("body", t.body)
 	enc.AddInt64("cost", t.cost)
+	if t.err == nil {
+		enc.AddString("err", "")
+	} else {
+		enc.AddString("err", t.err.Error())
+	}
 	return nil
 }

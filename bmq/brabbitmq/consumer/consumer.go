@@ -299,15 +299,24 @@ func (c *Consumer) monitor() {
 
 	for {
 		var (
-			times     uint64 = 1
-			notifyErr *amqp.Error
+			times        uint64 = 1
+			notification string
 		)
 		select {
-		case notifyErr = <-c.client.connection.NotifyClose(make(chan *amqp.Error)):
-			logger.Infra.Infof(c.buildLogPrefix()+"connection has been closed: %v", notifyErr)
-		case notifyErr = <-c.client.channel.NotifyClose(make(chan *amqp.Error)):
+		case notifyErr, ok := <-c.client.connection.NotifyClose(make(chan *amqp.Error)):
+			if ok {
+				notification = notifyErr.Error()
+			}
+			logger.Infra.Infof(c.buildLogPrefix()+"connection has been closed: %s", notification)
+		case notifyErr, ok := <-c.client.channel.NotifyClose(make(chan *amqp.Error)):
+			if ok {
+				notification = notifyErr.Error()
+			}
 			_ = c.client.connection.Close()
-			logger.Infra.Infof(c.buildLogPrefix()+"channel has been closed: %v", notifyErr)
+			logger.Infra.Infof(c.buildLogPrefix()+"channel has been closed: %s", notification)
+		case notification, _ = <-c.client.channel.NotifyCancel(make(chan string)):
+			_ = c.client.connection.Close()
+			logger.Infra.Infof(c.buildLogPrefix()+"queue has been deleted: %s", notification)
 		case _, ok := <-c.exitMonitor:
 			if ok {
 				close(c.exitMonitor)

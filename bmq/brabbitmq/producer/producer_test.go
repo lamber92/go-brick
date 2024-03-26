@@ -41,7 +41,7 @@ func TestPushWithConfirm(t *testing.T) {
 			idx := i
 			go func() {
 				msg := _testBuildMsg([]byte(fmt.Sprintf("{\"_id\":%d}", idx)))
-				if err := p1.Push(context.Background(), msg); err != nil {
+				if err := p1.Publish(context.Background(), msg); err != nil {
 					t.Error(err)
 					return
 				}
@@ -54,7 +54,7 @@ func TestPushWithConfirm(t *testing.T) {
 			idx := i
 			go func() {
 				msg := _testBuildMsg([]byte(fmt.Sprintf("{\"_id\":%d}", idx)))
-				if err := p2.Push(context.Background(), msg); err != nil {
+				if err := p2.Publish(context.Background(), msg); err != nil {
 					t.Error(err)
 					return
 				}
@@ -92,7 +92,7 @@ func TestPushWithoutConfirm(t *testing.T) {
 			idx := i
 			go func() {
 				msg := _testBuildMsg([]byte(fmt.Sprintf("{\"_id\":%d}", idx)))
-				if err := p1.Push(context.Background(), msg); err != nil {
+				if err := p1.Publish(context.Background(), msg); err != nil {
 					t.Error(err)
 					return
 				}
@@ -114,10 +114,10 @@ func TestClose(t *testing.T) {
 
 	testFunc := func(i int) error {
 		msg := _testBuildMsg([]byte(fmt.Sprintf("{\"_id\":%d}", i)))
-		return p1.Push(context.Background(), msg)
+		return p1.Publish(context.Background(), msg)
 	}
 
-	// build 3 goroutines loop call Push()
+	// build 3 goroutines loop call Publish()
 	for j := 0; j < 3; j++ {
 		g.Add(1)
 		go func() {
@@ -157,10 +157,10 @@ func TestReconnect(t *testing.T) {
 
 	testFunc := func(i int) error {
 		msg := _testBuildMsg([]byte(fmt.Sprintf("{\"_id\":%d}", i)))
-		return p1.Push(context.Background(), msg)
+		return p1.Publish(context.Background(), msg)
 	}
 
-	// build 3 goroutines loop call Push()
+	// build 3 goroutines loop call Publish()
 	for j := 0; j < goroutinesCount; j++ {
 		jj := j
 		g.Add(1)

@@ -15,6 +15,7 @@ import (
 
 const (
 	defaultMaxWaitConfirmTime = time.Second * 2 //
+	defaultMaxWaitPublishTime = time.Second * 2
 )
 
 func init() {
@@ -35,8 +36,8 @@ type Producer struct {
 	maxRetryTimes    uint                                 // max retry times (default is 5, don't retry when set to 0)
 	timeIntervalFunc func(times uint) (sec time.Duration) // retry interval strategy method
 	//
-	confirmTimer *time.Timer
-	exitConfirm  chan struct{}
+	publishTimer *time.Timer
+	exitPublish  chan struct{}
 	//
 	trace     bool
 	traceFunc TraceFunc
@@ -70,8 +71,8 @@ func newDefaultProducer(cli *Client) (*Producer, error) {
 		maxRetryTimes:    _defaultMaxRetryTimes,
 		timeIntervalFunc: defaultRetryTimeInterval,
 		//
-		confirmTimer: time.NewTimer(0),
-		exitConfirm:  make(chan struct{}, 1), // because the consumer of this pipe is not resident, a buffer is needed, otherwise the producer will block.
+		publishTimer: time.NewTimer(0),
+		exitPublish:  make(chan struct{}, 1), // because the consumer of this pipe is not resident, a buffer is needed, otherwise the producer will block.
 		//
 		trace:     true,
 		traceFunc: defaultTraceFunc,
@@ -105,8 +106,8 @@ func (p *Producer) GetKey() string {
 	return p.client.conf.Key
 }
 
-// Push push one message to rabbitmq server
-func (p *Producer) Push(ctx context.Context, data *amqp.Publishing) (err error) {
+// Publish push one message to rabbitmq server
+func (p *Producer) Publish(ctx context.Context, data *amqp.Publishing) (err error) {
 	var times uint = 0
 	if p.trace {
 		begin := time.Now()
@@ -122,15 +123,7 @@ func (p *Producer) Push(ctx context.Context, data *amqp.Publishing) (err error) 
 		if p.existing {
 			return berror.NewClientClose(nil, p.buildLogPrefix()+"client is going to exit")
 		}
-		if err = p.client.channel.PublishWithContext(
-			ctx,
-			p.client.subConf.Exchange,   // publish to an exchange
-			p.client.subConf.RoutingKey, // routing to 0 or more queues
-			false,                       // mandatory
-			false,                       // immediate
-			*data,
-		); err != nil {
-			err = berror.Convert(err, p.buildLogPrefix()+"push message fail. body: "+string(data.Body))
+		if err = p.publish(ctx, data); err != nil {
 			logger.Infra.WithError(err).
 				With(logger.NewField().String("body", string(data.Body))).
 				With(logger.NewField().String("message_id", data.MessageId)).
@@ -151,14 +144,12 @@ func (p *Producer) Push(ctx context.Context, data *amqp.Publishing) (err error) 
 				if berror.IsCode(err, bcode.ClientClosed) {
 					return nil
 				}
-				err = berror.NewInternalError(err, "get message confirmation fail")
 				logger.Infra.WithError(err).
 					With(logger.NewField().String("body", string(data.Body))).
 					With(logger.NewField().String("message_id", data.MessageId)).
 					Warn("get message confirmation fail")
 				continue
 			} else if !confirmation.Ack {
-				err = berror.NewInternalError(err, "push message than rabbitmq server return nack")
 				logger.Infra.WithError(err).
 					With(logger.NewField().String("body", string(data.Body))).
 					With(logger.NewField().String("message_id", data.MessageId)).
@@ -171,17 +162,44 @@ func (p *Producer) Push(ctx context.Context, data *amqp.Publishing) (err error) 
 	return
 }
 
+func (p *Producer) publish(ctx context.Context, data *amqp.Publishing) (err error) {
+	p.publishTimer.Reset(defaultMaxWaitPublishTime)
+	defer p.publishTimer.Stop()
+	select {
+	case _, ok := <-p.exitPublish:
+		if ok {
+			close(p.exitPublish)
+		}
+		return berror.NewClientClose(nil, p.buildLogPrefix()+"client is going to exit")
+	case <-p.publishTimer.C:
+		return berror.NewGatewayTimeout(nil, p.buildLogPrefix()+"publish timeout")
+	default:
+		if err = p.client.channel.PublishWithContext(
+			ctx,
+			p.client.subConf.Exchange,   // publish to an exchange
+			p.client.subConf.RoutingKey, // routing to 0 or more queues
+			false,                       // mandatory
+			false,                       // immediate
+			*data,
+		); err != nil {
+			return berror.Convert(err, p.buildLogPrefix()+"publish message fail | body: "+string(data.Body))
+		}
+		return
+	}
+}
+
 // getConfirmation receive the response from rabbitmq-server after receiving the push message
 func (p *Producer) getConfirmation() (amqp.Confirmation, error) {
-	p.confirmTimer.Reset(defaultMaxWaitConfirmTime)
+	p.publishTimer.Reset(defaultMaxWaitConfirmTime)
+	defer p.publishTimer.Stop()
 	select {
-	case _, ok := <-p.exitConfirm:
+	case _, ok := <-p.exitPublish:
 		if ok {
-			close(p.exitConfirm)
+			close(p.exitPublish)
 		}
-		return amqp.Confirmation{}, berror.NewClientClose(nil, p.buildLogPrefix()+"confirm is going to exit")
-	case <-p.confirmTimer.C:
-		return amqp.Confirmation{}, berror.NewClientClose(nil, p.buildLogPrefix()+"confirm timeout")
+		return amqp.Confirmation{}, berror.NewClientClose(nil, p.buildLogPrefix()+"client is going to exit")
+	case <-p.publishTimer.C:
+		return amqp.Confirmation{}, berror.NewGatewayTimeout(nil, p.buildLogPrefix()+"confirm timeout")
 	case info, ok := <-p.client.confirms:
 		if !ok {
 			return amqp.Confirmation{}, berror.NewClientClose(nil, p.buildLogPrefix()+"confirm channel has been close")
@@ -196,15 +214,24 @@ func (p *Producer) monitor() {
 
 	for {
 		var (
-			times     uint64 = 1
-			notifyErr *amqp.Error
+			times        uint64 = 1
+			notification string
 		)
 		select {
-		case notifyErr = <-p.client.connection.NotifyClose(make(chan *amqp.Error)):
-			logger.Infra.Infof(p.buildLogPrefix()+"connection has been closed: %v", notifyErr)
-		case notifyErr = <-p.client.channel.NotifyClose(make(chan *amqp.Error)):
+		case notifyErr, ok := <-p.client.connection.NotifyClose(make(chan *amqp.Error)):
+			if ok {
+				notification = notifyErr.Error()
+			}
+			logger.Infra.Infof(p.buildLogPrefix()+"connection has been closed: %s", notification)
+		case notifyErr, ok := <-p.client.channel.NotifyClose(make(chan *amqp.Error)):
 			_ = p.client.connection.Close()
-			logger.Infra.Infof(p.buildLogPrefix()+"channel has been closed: %v", notifyErr)
+			if ok {
+				notification = notifyErr.Error()
+			}
+			logger.Infra.Infof(p.buildLogPrefix()+"channel has been closed: %s", notification)
+		case notification, _ = <-p.client.channel.NotifyCancel(make(chan string)):
+			_ = p.client.connection.Close()
+			logger.Infra.Infof(p.buildLogPrefix()+"queue has been deleted: %s", notification)
 		case _, ok := <-p.exitMonitor:
 			if ok {
 				close(p.exitMonitor)
@@ -264,14 +291,15 @@ func (p *Producer) Close() error {
 	if p.exitMonitor != nil {
 		p.exitMonitor <- struct{}{}
 	}
-	if p.exitConfirm != nil {
-		p.exitConfirm <- struct{}{}
+	if p.exitPublish != nil {
+		p.exitPublish <- struct{}{}
 	}
 	// close client
 	if err := p.client.close(); err != nil {
 		return err
 	}
 
+	p.publishTimer.Stop()
 	logger.Infra.Infof(p.buildLogPrefix() + "shutdown success")
 	return nil
 }

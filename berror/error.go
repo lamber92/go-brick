@@ -182,6 +182,24 @@ func NewNotFound(err error, reason string, detail ...any) error {
 	return NewWithSkip(err, bstatus.New(bcode.NotFound, reason, ds), 1)
 }
 
+// NewRequestTimeout create a request timeout error
+func NewRequestTimeout(err error, reason string, detail ...any) error {
+	var ds any = nil
+	if len(detail) > 0 {
+		ds = detail[0]
+	}
+	return NewWithSkip(err, bstatus.New(bcode.RequestTimeout, reason, ds), 1)
+}
+
+// NewGatewayTimeout create a gateway timeout error
+func NewGatewayTimeout(err error, reason string, detail ...any) error {
+	var ds any = nil
+	if len(detail) > 0 {
+		ds = detail[0]
+	}
+	return NewWithSkip(err, bstatus.New(bcode.GatewayTimeout, reason, ds), 1)
+}
+
 // NewClientClose create a client close error
 func NewClientClose(err error, reason string, detail ...any) error {
 	var ds any = nil

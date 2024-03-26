@@ -100,6 +100,10 @@ func (hdr *RetryHandler) CloneConfig(source *RetryHandler) {
 	hdr.timeIntervalFunc = source.timeIntervalFunc
 }
 
+func (hdr *RetryHandler) Close() {
+	hdr.timer.Stop()
+}
+
 func (hdr *RetryHandler) waitForNextRetry(err error) error {
 	// the retry times of retries increases automatically
 	hdr.retryTimes++

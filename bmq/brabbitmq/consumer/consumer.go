@@ -152,11 +152,11 @@ func (c *Consumer) Work(f Handler) error {
 		c.handlerChainReadOnly = append(c.handlerChainReadOnly, c.handlerChain...)
 		c.handlerChainReadOnly = append(c.handlerChainReadOnly, f)
 	}
-	go c.run()
+	go c.startWork()
 	return nil
 }
 
-func (c *Consumer) run() {
+func (c *Consumer) startWork() {
 	go func() {
 		c.exitWorkerDone.Add(1)
 		timer := time.NewTimer(0)
@@ -348,22 +348,22 @@ func (c *Consumer) recover() error {
 		return nil
 	}
 	// stop the running goroutine
-	c.stopRun()
+	c.stopWork()
 	// try to restore the connection
 	if err := c.client.recover(); err != nil {
 		return err
 	}
 	// ensure that there is only one worker currently and it has been executed
 	if c.working.CompareAndSwap(false, true) && len(c.handlerChainReadOnly) > 0 {
-		go c.run()
+		go c.startWork()
 		logger.Infra.Info(c.buildLogPrefix() + "worker recover to run again")
 	}
 	logger.Infra.Info(c.buildLogPrefix() + "recover success")
 	return nil
 }
 
-// stopRun 退出所有消费业务逻辑协程
-func (c *Consumer) stopRun() {
+// stopWork exit all work-goroutine
+func (c *Consumer) stopWork() {
 	// notify current consumer to close all working goroutines
 	select {
 	case _, ok := <-c.exitWorker:
@@ -383,15 +383,21 @@ func (c *Consumer) stopRun() {
 func (c *Consumer) Close() error {
 	c.Lock()
 	defer c.Unlock()
-	// notify monitor go to exit
-	c.existing = true
-	c.exitMonitor <- struct{}{}
+	if c.existing {
+		return berror.NewInternalError(nil, c.buildLogPrefix()+"has been closed")
+	}
+	if c.exitMonitor != nil {
+		c.exitMonitor <- struct{}{}
+	}
 	// stop the running goroutine
-	c.stopRun()
+	c.stopWork()
 	// close client
 	if err := c.client.close(); err != nil {
 		return err
 	}
+	c.retryHdr.Close()
+
+	c.existing = true
 	logger.Infra.Infof(c.buildLogPrefix() + "shutdown success")
 	return nil
 }

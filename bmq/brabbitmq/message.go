@@ -1,9 +1,15 @@
 package brabbitmq
 
-import amqp "github.com/rabbitmq/amqp091-go"
+import (
+	"context"
+	"go-brick/btrace"
+	"time"
+
+	amqp "github.com/rabbitmq/amqp091-go"
+)
 
 // BuildTextMsg4Push build a simple rabbitmq-producer-message of text
-func BuildTextMsg4Push(b []byte, persistent bool, priorities ...uint8) *amqp.Publishing {
+func BuildTextMsg4Push(ctx context.Context, body []byte, persistent bool, priorities ...uint8) *amqp.Publishing {
 	var (
 		priority     uint8 = 0
 		deliveryMode uint8 = 0
@@ -18,9 +24,10 @@ func BuildTextMsg4Push(b []byte, persistent bool, priorities ...uint8) *amqp.Pub
 		Headers:         amqp.Table{},
 		ContentType:     "text/plain",
 		ContentEncoding: "",
-		Body:            b,
+		Body:            body,
 		DeliveryMode:    deliveryMode, // example: amqp.Transient, 1=non-persistent, 2=persistent
-		Priority:        priority,     // 0-9，
-		// a bunch of application/implementation-specific fields
+		Priority:        priority,     // 0-9
+		MessageId:       btrace.GetTraceID(ctx),
+		Timestamp:       time.Now(),
 	}
 }

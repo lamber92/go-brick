@@ -9,6 +9,10 @@ import (
 	amqp "github.com/rabbitmq/amqp091-go"
 )
 
+const (
+	defaultConfirmChanSize = 1000
+)
+
 type Client struct {
 	conf    *config.Config
 	subConf *config.ProducerConfig
@@ -27,13 +31,19 @@ func newClient(conf *config.Config, id uint) (client *Client, err error) {
 		subConf: conf.Extra.(*config.ProducerConfig),
 		idx:     id,
 	}
+	if len(client.subConf.Queue) == 0 {
+		return nil, berror.NewInvalidArgument(nil, client.buildLogPrefix()+"queue name cannot be empty")
+	}
 	if err = client.initChannel(); err != nil {
 		return
 	}
-	if err = client.bindExchange(); err != nil {
+	if err = client.initExchange(); err != nil {
 		return
 	}
-	if err = client.bindQueue(); err != nil {
+	if err = client.initQueue(); err != nil {
+		return
+	}
+	if err = client.initConfirms(); err != nil {
 		return
 	}
 	return
@@ -45,10 +55,13 @@ func (cli *Client) recover() (err error) {
 	if err = cli.initChannel(); err != nil {
 		return
 	}
-	if err = cli.bindExchange(); err != nil {
+	if err = cli.initExchange(); err != nil {
 		return
 	}
-	if err = cli.bindQueue(); err != nil {
+	if err = cli.initQueue(); err != nil {
+		return
+	}
+	if err = cli.initConfirms(); err != nil {
 		return
 	}
 	return
@@ -66,24 +79,24 @@ func (cli *Client) initChannel() (err error) {
 	return
 }
 
-// bindExchange
-func (cli *Client) bindExchange() error {
+// initExchange
+func (cli *Client) initExchange() error {
 	if err := cli.channel.ExchangeDeclare(
-		cli.subConf.Exchange,     // name of the exchange
-		cli.subConf.ExchangeType, // type
-		true,                     // durable
-		false,                    // delete when complete
-		false,                    // internal
-		false,                    // noWait
-		nil,                      // arguments
+		cli.subConf.Exchange,                // name of the exchange
+		cli.subConf.ExchangeType.ToString(), // type
+		true,                                // durable
+		false,                               // delete when complete
+		false,                               // internal
+		false,                               // noWait
+		nil,                                 // arguments
 	); err != nil {
 		return berror.Convert(err, cli.buildLogPrefix()+"fail to bind exchange")
 	}
 	return nil
 }
 
-// bindQueue
-func (cli *Client) bindQueue() error {
+// initQueue
+func (cli *Client) initQueue() error {
 	queue, err := cli.channel.QueueDeclare(
 		cli.subConf.Queue,     // name of the queue
 		true,                  // durable
@@ -106,12 +119,17 @@ func (cli *Client) bindQueue() error {
 	); err != nil {
 		return berror.Convert(err, cli.buildLogPrefix()+"find to bind queue")
 	}
+	return nil
+}
 
-	if err = cli.channel.Confirm(false); err != nil {
+func (cli *Client) initConfirms() error {
+	if cli.subConf.NoConfirm {
+		return nil
+	}
+	if err := cli.channel.Confirm(false); err != nil {
 		return berror.Convert(err, cli.buildLogPrefix()+"channel could not be put into confirm mode")
 	}
-	cli.confirms = cli.channel.NotifyPublish(make(chan amqp.Confirmation, 500))
-
+	cli.confirms = cli.channel.NotifyPublish(make(chan amqp.Confirmation, defaultConfirmChanSize))
 	return nil
 }
 

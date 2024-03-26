@@ -1,69 +1,102 @@
 package producer
 
 import (
+	"context"
 	"fmt"
+	"go-brick/bmq/brabbitmq/config"
 	"sync"
 	"testing"
+	"time"
+
+	amqp "github.com/rabbitmq/amqp091-go"
 )
 
-func TestProducer(t *testing.T) {
-	var (
-		insertKey = "insert"
-		updateKey = "update"
+func TestProducer_PushWithConfirm(t *testing.T) {
+	const (
+		key1  = "test_rabbitmq_producer_1"
+		key2  = "test_rabbitmq_producer_2"
+		url   = "amqp://root:123456@localhost:5672/"
+		vhost = "test"
 	)
-
-	if err := updateHub(insertKey, &mqConfig{
-		Url:   "amqp://guest:guest@192.168.1.245:5672/",
-		VHost: "modi",
-		Type:  "producer",
-		Extra: &Config{
-			Exchange:     "e.direct.erp",
-			ExchangeType: "direct",
-			RoutingKey:   "insert_opensearch_goods_lib",
-			Reliable:     true,
+	p1, err := New(&config.Config{
+		Url:   url,
+		VHost: vhost,
+		Type:  config.TypeProducer,
+		Extra: &config.ProducerConfig{
+			Queue:        "test_queue_1",
+			Exchange:     "e.direct.test",
+			ExchangeType: config.ExchangeTypeDirect,
+			RoutingKey:   "test_rabbitmq_producer_key_1",
 			Persistent:   true,
 		},
-		//
-		Key: insertKey,
-	}); err != nil {
-		panic(err)
-	}
-
-	if err := updateHub(updateKey, &mqConfig{
-		Url:   "amqp://guest:guest@192.168.1.245:5672/",
-		VHost: "modi",
-		Type:  "producer",
-		Extra: &Config{
-			Exchange:     "e.direct.erp",
-			ExchangeType: "direct",
-			RoutingKey:   "update_opensearch_goods_lib",
-			Reliable:     true,
-			Persistent:   true,
-		},
-		//
-		Key: updateKey,
-	}); err != nil {
-		panic(err)
-	}
-
-	ps, err := GetProducerGroup([]string{insertKey, updateKey})
+		Key: key1,
+	}, 0)
 	if err != nil {
-		panic(err)
+		t.Fatal(err)
 	}
+	p1.SetTraceFunc(_testTraceFunc)
+
+	p2, err := New(&config.Config{
+		Url:   url,
+		VHost: vhost,
+		Type:  config.TypeProducer,
+		Extra: &config.ProducerConfig{
+			Queue:        "test_queue_2",
+			Exchange:     "e.direct.test",
+			ExchangeType: config.ExchangeTypeDirect,
+			RoutingKey:   "test_rabbitmq_producer_key_2",
+			Persistent:   true,
+		},
+		//
+		Key: key2,
+	}, 0)
+	if err != nil {
+		t.Fatal(err)
+	}
+	p2.SetTraceFunc(_testTraceFunc)
 
 	g := sync.WaitGroup{}
-	for _, p := range ps {
-		p := p
-		g.Add(1)
-		go func() {
-			for i := 0; i < 10000; i++ {
-				msg := BuildSimpleTextMsg([]byte(fmt.Sprintf("{\"_id\":%d}", i)), 2, 1)
-				if err := p.PushWithConfirm(msg); err != nil {
-					panic(err)
+	g.Add(200)
+	go func() {
+		for i := 0; i < 100; i++ {
+			idx := i
+			go func() {
+				msg := _testBuildMsg([]byte(fmt.Sprintf("{\"_id\":%d}", idx)))
+				if err := p1.Push(context.Background(), msg); err != nil {
+					t.Error(err)
+					return
 				}
-			}
-			g.Done()
-		}()
-	}
+				g.Done()
+			}()
+		}
+	}()
+	go func() {
+		for i := 100; i < 200; i++ {
+			idx := i
+			go func() {
+				msg := _testBuildMsg([]byte(fmt.Sprintf("{\"_id\":%d}", idx)))
+				if err := p2.Push(context.Background(), msg); err != nil {
+					t.Error(err)
+					return
+				}
+				g.Done()
+			}()
+		}
+	}()
 	g.Wait()
+}
+
+func _testTraceFunc(ctx context.Context, data *amqp.Publishing, since time.Duration) {
+	fmt.Printf("body: %s | cost: %d\n", string(data.Body), since.Milliseconds())
+}
+
+func _testBuildMsg(b []byte) *amqp.Publishing {
+	return &amqp.Publishing{
+		Headers:         amqp.Table{},
+		ContentType:     "text/plain",
+		ContentEncoding: "",
+		Body:            b,
+		DeliveryMode:    2,
+		Priority:        0,
+	}
 }

@@ -27,6 +27,9 @@ func newClient(conf *config.Config, id uint) (client *Client, err error) {
 		subConf: conf.Extra.(*config.ConsumerConfig),
 		idx:     id,
 	}
+	if len(client.subConf.Queue) == 0 {
+		return nil, berror.NewInvalidArgument(nil, client.buildLogPrefix()+"queue name cannot be empty")
+	}
 	if err = client.initChannel(); err != nil {
 		return
 	}
@@ -75,13 +78,13 @@ func (cli *Client) initChannel() (err error) {
 // initExchange
 func (cli *Client) initExchange() error {
 	if err := cli.channel.ExchangeDeclare(
-		cli.subConf.Exchange,     // name of the exchange
-		cli.subConf.ExchangeType, // type
-		true,                     // durable
-		false,                    // delete when complete
-		false,                    // internal
-		false,                    // noWait
-		nil,                      // arguments
+		cli.subConf.Exchange,                // name of the exchange
+		cli.subConf.ExchangeType.ToString(), // type
+		true,                                // durable
+		false,                               // delete when complete
+		false,                               // internal
+		false,                               // noWait
+		nil,                                 // arguments
 	); err != nil {
 		return berror.Convert(err, cli.buildLogPrefix()+"fail to bind exchange")
 	}

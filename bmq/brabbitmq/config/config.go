@@ -21,6 +21,29 @@ const (
 	TypeProducer Type = "producer"
 )
 
+// "direct", "fanout", "topic" and
+//"headers"
+
+type ExchangeType string
+
+func (t ExchangeType) ToString() string {
+	return string(t)
+}
+
+const (
+	ExchangeTypeDirect  ExchangeType = "direct"
+	ExchangeTypeFanout  ExchangeType = "fanout"
+	ExchangeTypeTopic   ExchangeType = "topic"
+	ExchangeTypeHeaders ExchangeType = "headers"
+)
+
+var ExchangeTypeM = map[ExchangeType]struct{}{
+	ExchangeTypeDirect:  {},
+	ExchangeTypeFanout:  {},
+	ExchangeTypeTopic:   {},
+	ExchangeTypeHeaders: {},
+}
+
 type Config struct {
 	Url   string
 	VHost string
@@ -32,9 +55,10 @@ type Config struct {
 type ProducerConfig struct {
 	Queue        string
 	Exchange     string
-	ExchangeType string
+	ExchangeType ExchangeType
 	RoutingKey   string
-	Persistent   bool // persistent messages
+	Persistent   bool
+	NoConfirm    bool
 	QueueArgs    map[string]interface{}
 }
 
@@ -42,7 +66,7 @@ type ConsumerConfig struct {
 	Queue         string
 	Consumer      string
 	Exchange      string
-	ExchangeType  string
+	ExchangeType  ExchangeType
 	BindingKey    string
 	PrefetchCount uint32
 	ConsumerCount int
@@ -66,7 +90,10 @@ func LoadConfig(ctx context.Context, key string, namespace ...string) (*Config, 
 			return nil, berror.Convert(err, buildLogPrefix(key)+"failed to unmarshal rabbitmq-consumer config: "+v.String())
 		}
 		if len(consumer.Queue) == 0 {
-			return nil, berror.Convert(err, buildLogPrefix(key)+"'queue name' cannot be empty: "+v.String())
+			return nil, berror.NewInvalidArgument(err, buildLogPrefix(key)+"'QueueName' cannot be empty: "+v.String())
+		}
+		if _, ok := ExchangeTypeM[consumer.ExchangeType]; !ok {
+			return nil, berror.NewInvalidArgument(nil, buildLogPrefix(key)+"invalid 'ExchangeType' value")
 		}
 		// at least 1 consumer
 		if consumer.ConsumerCount == 0 {
@@ -90,7 +117,10 @@ func LoadConfig(ctx context.Context, key string, namespace ...string) (*Config, 
 			return nil, berror.Convert(err, buildLogPrefix(key)+"failed to unmarshal rabbitmq-producer config: "+v.String())
 		}
 		if len(producer.Queue) == 0 {
-			return nil, berror.Convert(err, buildLogPrefix(key)+"'queue name' cannot be empty: "+v.String())
+			return nil, berror.NewInvalidArgument(err, buildLogPrefix(key)+"'QueueName' cannot be empty: "+v.String())
+		}
+		if _, ok := ExchangeTypeM[producer.ExchangeType]; !ok {
+			return nil, berror.NewInvalidArgument(nil, buildLogPrefix(key)+"invalid 'ExchangeType' value")
 		}
 		// handle special param
 		if producer.QueueArgs != nil {
@@ -101,7 +131,7 @@ func LoadConfig(ctx context.Context, key string, namespace ...string) (*Config, 
 		}
 		conf.Extra = &producer
 	default:
-		return nil, berror.NewInternalError(nil, buildLogPrefix(key)+"unsupported config: "+conf.Type.ToString())
+		return nil, berror.NewInvalidArgument(nil, buildLogPrefix(key)+"unsupported config: "+conf.Type.ToString())
 	}
 
 	conf.Key = key

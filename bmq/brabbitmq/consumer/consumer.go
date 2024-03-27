@@ -88,8 +88,10 @@ func newDefaultConsumer(cli *Client) *Consumer {
 }
 
 // Use 增加中间件，仅执行消费前操作有效
-func (c *Consumer) Use(f ...Handler) *Consumer {
-	c.handlerChain = append(c.handlerChain, f...)
+func (c *Consumer) Use(fs ...Handler) *Consumer {
+	if len(fs) > 0 {
+		c.handlerChain = append(c.handlerChain, fs...)
+	}
 	return c
 }
 
@@ -248,7 +250,7 @@ func (c *Consumer) handleMessage(ds []*amqp.Delivery) error {
 		if c.retryHdr.ExceededLimit() {
 			c.retryHdr.ClearRetriedTimes()
 			logger.Infra.WithError(err).
-				Errorf(c.buildLogPrefix()+"[Logic] retries retryTimes have exceeded limit: [%d], discard message...", c.retryHdr.maxRetryTimes)
+				Errorf(c.buildLogPrefix()+"[Logic] retries retryTimes have exceeded limit: [%d], discard messages...", c.retryHdr.maxRetryTimes)
 			return c.Ack(ds)
 		} else {
 			if err = c.Nack(ds); err != nil {
@@ -282,7 +284,6 @@ func (c *Consumer) Ack(ds []*amqp.Delivery) error {
 func (c *Consumer) Nack(ds []*amqp.Delivery) error {
 	err := c.nackFunc(ds)
 	if err == nil {
-		c.retryHdr.ClearRetriedTimes()
 		return nil
 	}
 	for {
@@ -290,7 +291,6 @@ func (c *Consumer) Nack(ds []*amqp.Delivery) error {
 			return err
 		}
 		if err = c.nackFunc(ds); err == nil {
-			c.retryHdr.ClearRetriedTimes()
 			return nil
 		}
 	}
@@ -367,6 +367,7 @@ func (c *Consumer) recover() error {
 	}
 	// ensure that there is only one worker currently and it has been executed
 	if c.working.CompareAndSwap(false, true) && len(c.handlerChainReadOnly) > 0 {
+		c.exitWorker = make(chan struct{})
 		go c.startWork()
 		logger.Infra.Info(c.buildLogPrefix() + "worker recover to run again")
 	}

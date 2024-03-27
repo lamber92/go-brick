@@ -1,6 +1,7 @@
 package consumer
 
 import (
+	"go-brick/berror"
 	"go-brick/bmq/brabbitmq/config"
 	"testing"
 	"time"
@@ -16,7 +17,7 @@ const (
 )
 
 func TestConsumerWork(t *testing.T) {
-	c1, err := _testNewConsumer1()
+	c1, err := _testNewConsumer1(10)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -30,11 +31,13 @@ func TestConsumerWork(t *testing.T) {
 		t.Fatal(err)
 	}
 	time.Sleep(10 * time.Second)
-	_ = c1.Close()
+	if err = c1.Close(); err != nil {
+		t.Fatal(err)
+	}
 }
 
 func TestConsumerWorkRecover(t *testing.T) {
-	c1, err := _testNewConsumer1()
+	c1, err := _testNewConsumer1(10)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -57,20 +60,40 @@ func TestConsumerWorkRecover(t *testing.T) {
 }
 
 func TestConsumerWorkPlugin(t *testing.T) {
-	c1, err := _testNewConsumer1()
+	c1, err := _testNewConsumer1(10)
 	if err != nil {
 		t.Fatal(err)
 	}
-
-	times := 0
-	if err = c1.Work(func(context *Context, deliveries []*amqp.Delivery, idx uint) error {
-		if times >= 5 {
-			times = 0
+	if err = c1.
+		Use(func(ctx *Context, deliveries []*amqp.Delivery, idx uint) error {
+			for _, v := range deliveries {
+				t.Logf("[%d] %s", idx, string(v.Body))
+			}
+			return ctx.Next(deliveries, idx)
+		}).
+		Work(func(ctx *Context, deliveries []*amqp.Delivery, idx uint) error {
+			t.Log("-------------------")
+			time.Sleep(time.Second * 2)
 			return nil
-		} else {
-			times++
-			panic("panic test")
+		}); err != nil {
+		t.Fatal(err)
+	}
+	time.Sleep(time.Second * 10)
+	_ = c1.Close()
+}
+
+func TestConsumerRetryInfinitely(t *testing.T) {
+	c1, err := _testNewConsumer1(10)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err = c1.Work(func(context *Context, deliveries []*amqp.Delivery, idx uint) error {
+		for _, v := range deliveries {
+			t.Logf("[%d] %s", idx, string(v.Body))
 		}
+		t.Log("-------------------")
+		time.Sleep(time.Second)
+		return EventRetryInfinitely
 	}); err != nil {
 		t.Fatal(err)
 	}
@@ -78,118 +101,51 @@ func TestConsumerWorkPlugin(t *testing.T) {
 	_ = c1.Close()
 }
 
-//func TestConsumerBizErrorRetry(t *testing.T) {
-//	if err := updateHub(Default, &mqConfig{
-//		Url:   "amqp://guest:guest@192.168.1.245:5672/",
-//		VHost: "erp",
-//		Type:  "consumer",
-//		Extra: &ConsumerConfig{
-//			Queue:         "q.durable.erp.yishou.canal",
-//			Consumer:      "",
-//			Exchange:      "e.direct.erp",
-//			ExchangeType:  "direct",
-//			BindingKey:    "k.yishou.erp.canal",
-//			PrefetchCount: 1,
-//			ConsumerCount: 1,
-//		},
-//		//
-//		Key: Default,
-//	}); err != nil {
-//		panic(err)
-//	}
-//	consumers, err := GetConsumer(Default)
-//	if err != nil {
-//		panic(err)
-//	}
-//
-//	for _, consumer := range consumers {
-//		consumer.EnableRetry().RunOnce(func(ctx *rabbitmq.Context, d []*amqp.Delivery, j int) error {
-//			_ = d[len(d)-1].Nack(true, true)
-//			return fmt.Errorf("test biz error retry")
-//		})
-//
-//		time.Sleep(20 * time.Second)
-//		_ = consumer.testFakeDisconnect() // 断线重连
-//	}
-//
-//	time.Sleep(20 * time.Second)
-//	_ = Close() // 主动退出
-//}
-//
-//func TestConsumerAckFailedRetry(t *testing.T) {
-//	if err := updateHub(Default, &mqConfig{
-//		Url:   "amqp://guest:guest@192.168.1.245:5672/",
-//		VHost: "erp",
-//		Type:  "consumer",
-//		Extra: &ConsumerConfig{
-//			Queue:         "q.durable.erp.yishou.canal",
-//			Consumer:      "",
-//			Exchange:      "e.direct.erp",
-//			ExchangeType:  "direct",
-//			BindingKey:    "k.yishou.erp.canal",
-//			PrefetchCount: 1,
-//			ConsumerCount: 1,
-//		},
-//		//
-//		Key: Default,
-//	}); err != nil {
-//		panic(err)
-//	}
-//	consumers, err := GetConsumer(Default)
-//	if err != nil {
-//		panic(err)
-//	}
-//
-//	for _, consumer := range consumers {
-//		// 注意！测试时需要手动改handleAckAndNack()里面的ack为失败返回err，否则观察不到整个流程
-//		consumer.EnableRetry().RunOnce(func(ctx *rabbitmq.Context, d []*amqp.Delivery, j int) error {
-//			return &EventAckFail{}
-//		})
-//
-//		time.Sleep(20 * time.Second)
-//		_ = consumer.testFakeDisconnect() // 断线重连
-//	}
-//
-//	time.Sleep(20 * time.Second)
-//	_ = Close() // 主动退出
-//}
-//
-//func TestConsumerPassByRetriesExceeded(t *testing.T) {
-//	if err := updateHub(Default, &mqConfig{
-//		Url:   "amqp://guest:guest@192.168.1.245:5672/",
-//		VHost: "erp",
-//		Type:  "consumer",
-//		Extra: &ConsumerConfig{
-//			Queue:         "q.durable.erp.yishou.canal",
-//			Consumer:      "",
-//			Exchange:      "e.direct.erp",
-//			ExchangeType:  "direct",
-//			BindingKey:    "k.yishou.erp.canal",
-//			PrefetchCount: 1,
-//			ConsumerCount: 1,
-//		},
-//		//
-//		Key: Default,
-//	}); err != nil {
-//		panic(err)
-//	}
-//	consumers, err := GetConsumer(Default)
-//	if err != nil {
-//		panic(err)
-//	}
-//
-//	for _, consumer := range consumers {
-//		consumer.EnableRetry().RunOnce(func(ctx *rabbitmq.Context, d []*amqp.Delivery, j int) error {
-//			_ = d[len(d)-1].Nack(true, true)
-//			//_ = d.ack(false)
-//			time.Sleep(time.Second)
-//			return fmt.Errorf("xxxx")
-//		})
-//	}
-//
-//	time.Sleep(300 * time.Second)
-//	_ = Close() // 主动退出
-//}
+func TestConsumerRetryExceeded(t *testing.T) {
+	c1, err := _testNewConsumer1(10)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err = c1.
+		SetMaxRetryTimes(3).
+		Work(func(context *Context, deliveries []*amqp.Delivery, idx uint) error {
+			for _, v := range deliveries {
+				t.Logf("[%d] %s", idx, string(v.Body))
+			}
+			t.Log("-------------------")
+			time.Sleep(time.Second)
+			return berror.NewInternalError(nil, "test retry exceeded")
+		}); err != nil {
+		t.Fatal(err)
+	}
+	time.Sleep(time.Minute)
+	_ = c1.Close()
+}
+
+func TestConsumerReconnect(t *testing.T) {
+	c1, err := _testNewConsumer1(3)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err = c1.
+		SetMaxRetryTimes(3).
+		Work(func(context *Context, deliveries []*amqp.Delivery, idx uint) error {
+			for _, v := range deliveries {
+				t.Logf("[%d] %s", idx, string(v.Body))
+			}
+			t.Log("-------------------")
+			time.Sleep(time.Second)
+			return nil
+		}); err != nil {
+		t.Fatal(err)
+	}
+
+	time.Sleep(time.Second * 10)
+	_ = c1.client.connection.Close()
+	time.Sleep(time.Second * 30)
+
+	_ = c1.Close()
+}
 
 // _testSimulateDisconnect
 // pure testing method, simulating network disconnection scenarios
@@ -215,7 +171,7 @@ func (c *Consumer) _testSimulateCancelChannel() error {
 	return nil
 }
 
-func _testNewConsumer1() (*Consumer, error) {
+func _testNewConsumer1(prefetchCount uint32) (*Consumer, error) {
 	return New(&config.Config{
 		Url:   url,
 		VHost: vhost,
@@ -225,7 +181,7 @@ func _testNewConsumer1() (*Consumer, error) {
 			Exchange:      "e.direct.test",
 			ExchangeType:  config.ExchangeTypeDirect,
 			BindingKey:    "test_rabbitmq_producer_key_1",
-			PrefetchCount: 10,
+			PrefetchCount: prefetchCount,
 		},
 		Key: key1,
 	}, 1)

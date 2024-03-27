@@ -16,8 +16,8 @@ type RetryHandler struct {
 	retryTimes    uint // current retry times
 	maxRetryTimes uint // maximum retry times (default is 5, infinite retries when set to 0)
 
-	timer            *time.Timer              // 重试等待定时器
-	timeIntervalFunc func(uint) time.Duration // 重试时间间隔策略方法
+	timer            *time.Timer              // retry wait timer
+	timeIntervalFunc func(uint) time.Duration // retry interval strategy method
 
 	consumer *Consumer
 }
@@ -52,7 +52,7 @@ func (hdr *RetryHandler) InfiniteRetry(err error) bool {
 		infinitely = true
 		logger.Infra.WithError(err).Warn(hdr.buildLogPrefix() + "internal network error. triggers continuous retry...")
 	case errors.As(err, &innError):
-		if innError.Status().Code() == EventCodeInfiniteRetry {
+		if innError.Status().Code() == EventCodeRetryInfinitely {
 			infinitely = true
 		} else {
 			// try to get the original error

@@ -21,9 +21,6 @@ const (
 	TypeProducer Type = "producer"
 )
 
-// "direct", "fanout", "topic" and
-//"headers"
-
 type ExchangeType string
 
 func (t ExchangeType) ToString() string {
@@ -73,7 +70,7 @@ type ConsumerConfig struct {
 	QueueArgs     map[string]interface{}
 }
 
-func LoadConfig(ctx context.Context, key string, namespace ...string) (*Config, error) {
+func Load(ctx context.Context, key string, namespace ...string) (*Config, error) {
 	v, err := bconfig.Static.Load(ctx, key, namespace...)
 	if err != nil {
 		return nil, berror.Convert(err, buildLogPrefix(key)+"failed to load rabbitmq config")

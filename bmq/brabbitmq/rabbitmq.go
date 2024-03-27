@@ -21,7 +21,7 @@ var (
 // Init connect to RabbitMQ and init all producers and consumers
 func Init(ctx context.Context, keys []string, namespace ...string) error {
 	f := func(key string) error {
-		conf, err := config.LoadConfig(ctx, key, namespace...)
+		conf, err := config.Load(ctx, key, namespace...)
 		if err != nil {
 			return err
 		}

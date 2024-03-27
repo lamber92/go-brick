@@ -104,14 +104,14 @@ func (hdr *RetryHandler) Close() {
 	hdr.timer.Stop()
 }
 
-func (hdr *RetryHandler) waitForNextRetry(err error) error {
+func (hdr *RetryHandler) waitForNextRetry(err error, event string) error {
 	// the retry times of retries increases automatically
 	hdr.retryTimes++
 	// get the time interval for the next retry
 	interval := hdr.timeIntervalFunc(hdr.retryTimes)
 	logger.Infra.WithError(err).
-		Infof(hdr.buildLogPrefix()+"retry consumption will be executed in %.3f seconds. current retry times: %d",
-			interval.Seconds(), hdr.retryTimes)
+		Infof(hdr.buildLogPrefix()+"[%s] retry consumption will be executed in %.3f seconds. current retry times: %d",
+			event, interval.Seconds(), hdr.retryTimes)
 
 	hdr.timer.Reset(interval)
 	defer hdr.timer.Stop()

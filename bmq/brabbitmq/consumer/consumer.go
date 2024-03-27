@@ -21,18 +21,21 @@ type Consumer struct {
 	client *Client
 	id     uint
 
-	existing       bool
-	exitWorker     chan struct{}
-	exitWorkerDone sync.WaitGroup // wait for all worker goroutines to exit
+	existing   bool
+	exitWorker chan struct{}
+	// wait for all worker goroutines to exit
+	exitWorkerDone sync.WaitGroup
 	exitMonitor    chan struct{}
 
-	// 下面2个参数针对批量读取使用
-	batchCount  int           // 一次取出的消息数
-	batchPeriod time.Duration // 批量读取最大等待时间
-	//
-	working              *atomic.Bool // ensure that the worker can only execute one at the same time
-	handlerChain         []Handler    // 设置调用链
-	handlerChainReadOnly []Handler    // 真正调用链
+	// maximum messages count of a single read
+	batchCount int
+	// maximum duration of a single read
+	batchPeriod time.Duration
+
+	// ensure that the worker can only execute one at the same time
+	working              *atomic.Bool
+	handlerChain         []Handler
+	handlerChainReadOnly []Handler
 	//
 	ackFunc  func([]*amqp.Delivery) error // 自动Re-Ack方法
 	nackFunc func([]*amqp.Delivery) error // 自动Re-Nack方法
@@ -222,7 +225,7 @@ func (c *Consumer) startWork() {
 // strategies for handling messages after they are successfully consumed or failed to be consumed
 // returning non-nil indicates that the outer loop needs to be interrupted
 func (c *Consumer) handleMessage(ds []*amqp.Delivery) error {
-	err := NewContext(c.handlerChainReadOnly).Handle(ds, c.id)
+	err := newContext(c.handlerChainReadOnly).Handle(ds, c.id)
 	if err == nil {
 		// running to this point indicates that
 		// the business side consumes successfully
@@ -245,7 +248,7 @@ func (c *Consumer) handleMessage(ds []*amqp.Delivery) error {
 		if c.retryHdr.ExceededLimit() {
 			c.retryHdr.ClearRetriedTimes()
 			logger.Infra.WithError(err).
-				Errorf(c.buildLogPrefix()+"retries retryTimes have exceeded limit: [%d], discard message...", c.retryHdr.maxRetryTimes)
+				Errorf(c.buildLogPrefix()+"[Logic] retries retryTimes have exceeded limit: [%d], discard message...", c.retryHdr.maxRetryTimes)
 			return c.Ack(ds)
 		} else {
 			if err = c.Nack(ds); err != nil {
@@ -254,7 +257,7 @@ func (c *Consumer) handleMessage(ds []*amqp.Delivery) error {
 			// keep going and wait for the retry cycle
 		}
 	}
-	return c.retryHdr.waitForNextRetry(err)
+	return c.retryHdr.waitForNextRetry(err, "Logic")
 }
 
 // Ack call rabbitmq.client Ack()
@@ -265,7 +268,7 @@ func (c *Consumer) Ack(ds []*amqp.Delivery) error {
 		return nil
 	}
 	for {
-		if err = c.retryHdr.waitForNextRetry(err); err != nil {
+		if err = c.retryHdr.waitForNextRetry(err, "Ack"); err != nil {
 			return err
 		}
 		if err = c.ackFunc(ds); err == nil {
@@ -283,7 +286,7 @@ func (c *Consumer) Nack(ds []*amqp.Delivery) error {
 		return nil
 	}
 	for {
-		if err = c.retryHdr.waitForNextRetry(err); err != nil {
+		if err = c.retryHdr.waitForNextRetry(err, "Nack"); err != nil {
 			return err
 		}
 		if err = c.nackFunc(ds); err == nil {
@@ -416,7 +419,7 @@ func (c *Consumer) buildLogPrefix() string {
 	return "[rabbitmq-consumer][" + c.client.conf.Key + "][" + strconv.FormatUint(uint64(c.id), 10) + "] "
 }
 
-// defaultAck default Recall ack()
+// defaultAck default recall ack()
 func defaultAck(ds []*amqp.Delivery) error {
 	if len(ds) == 0 {
 		return nil
@@ -427,7 +430,7 @@ func defaultAck(ds []*amqp.Delivery) error {
 	return nil
 }
 
-// defaultNack default Recall Nack()
+// defaultNack default recall Nack()
 func defaultNack(ds []*amqp.Delivery) error {
 	if len(ds) == 0 {
 		return nil

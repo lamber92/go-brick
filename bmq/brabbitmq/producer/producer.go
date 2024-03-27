@@ -15,8 +15,6 @@ import (
 
 const (
 	defaultMaxWaitConfirmTime = time.Second * 2 //
-	defaultMaxWaitPublishTime = time.Second * 2
-	defaultMaxWaitCloseTime   = time.Second * 5
 )
 
 func init() {
@@ -36,15 +34,23 @@ type Producer struct {
 	existing    bool
 	exitMonitor chan struct{}
 	//
-	maxRetryTimes    uint                                 // max retry times (default is 5, don't retry when set to 0)
-	timeIntervalFunc func(times uint) (sec time.Duration) // retry interval strategy method
+	// max retry times (default is 5, don't retry when set to 0)
+	maxRetryTimes uint
+	// retry interval strategy method
+	timeIntervalFunc func(times uint) (sec time.Duration)
 	//
 	publishTimer *time.Timer
 	exitPublish  chan struct{}
 	//
 	trace     bool
 	traceFunc TraceFunc
-	id        uint
+	// in strict confirmation mode,
+	// the message must be received from Rabbitmq-Confirm any circumstances
+	// before the message is pushed successfully.
+	// default is false
+	strictlyConfirm bool
+	//
+	id uint
 	//
 	sync.Mutex
 }
@@ -83,28 +89,37 @@ func newDefaultProducer(cli *Client) (*Producer, error) {
 	return res, nil
 }
 
-// SetMaxRetryTimes 设置最大重试次数
+// SetMaxRetryTimes set the maximum number of retries allowed
 func (p *Producer) SetMaxRetryTimes(times uint) *Producer {
 	p.maxRetryTimes = times
 	return p
 }
 
-// SetRetryTimesInterval 设置重试时间间隔策略
+// SetRetryTimesInterval set retry interval policy
 func (p *Producer) SetRetryTimesInterval(f func(times uint) (sec time.Duration)) *Producer {
 	p.timeIntervalFunc = f
 	return p
 }
 
+// DisableTrace turn off tracking
 func (p *Producer) DisableTrace() *Producer {
 	p.trace = false
 	return p
 }
 
+// SetTraceFunc set custom function for tracking information callback
 func (p *Producer) SetTraceFunc(f TraceFunc) *Producer {
 	p.traceFunc = f
 	return p
 }
 
+// EnableStrictlyConfirm enable strict confirmation mode
+func (p *Producer) EnableStrictlyConfirm() *Producer {
+	p.strictlyConfirm = true
+	return p
+}
+
+// GetKey get producer config key
 func (p *Producer) GetKey() string {
 	return p.client.conf.Key
 }
@@ -137,14 +152,15 @@ func (p *Producer) Publish(ctx context.Context, data *amqp.Publishing) (err erro
 			confirmation, err2 := p.getConfirmation()
 			if err2 != nil {
 				err = err2
-				// at this point, if get an error because the client connection is interrupted,
-				// there is no need to return an error because the message has most likely been delivered.
+				// at this point,
+				// when get a client-disconnect error,
+				// there is need to return a nil because the message has been confirmed in most cases.
 				//
 				// if return err and push message again,
-				// the message will be duplicated;
+				// the message is likely duplicated;
 				// else, it will cause the message to be lost.
-				// the latter is chosen here.
-				if berror.IsCode(err, bcode.ClientClosed) {
+				// the latter is chosen here by default.
+				if berror.IsCode(err, bcode.ClientClosed) && !p.strictlyConfirm {
 					return nil
 				}
 				logger.Infra.WithError(err).
@@ -295,7 +311,7 @@ func (p *Producer) recover() error {
 	return nil
 }
 
-// Close 待当前所有正在执行的消费协程完成最后一次完整消费后退出
+// Close disconnect the underlying connection and release resources
 func (p *Producer) Close() error {
 	p.Lock()
 	defer p.Unlock()

@@ -85,10 +85,12 @@ func TestPublishWithoutConfirm(t *testing.T) {
 	}
 	p1.DisableTrace()
 
+	messagesCount := 500
+
 	g := sync.WaitGroup{}
-	g.Add(100)
+	g.Add(messagesCount)
 	go func() {
-		for i := 0; i < 100; i++ {
+		for i := 0; i < messagesCount; i++ {
 			idx := i
 			go func() {
 				msg := _testBuildMsg([]byte(fmt.Sprintf("{\"_id\":%d}", idx)))
@@ -101,6 +103,7 @@ func TestPublishWithoutConfirm(t *testing.T) {
 		}
 	}()
 	g.Wait()
+	_ = p1.Close()
 }
 
 func TestClose(t *testing.T) {

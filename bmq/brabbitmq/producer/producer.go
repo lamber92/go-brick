@@ -14,7 +14,7 @@ import (
 )
 
 const (
-	defaultMaxWaitConfirmTime = time.Second * 2 //
+	defaultMaxWaitConfirmTime = time.Second * 5 //
 )
 
 func init() {
@@ -39,8 +39,7 @@ type Producer struct {
 	// retry interval strategy method
 	timeIntervalFunc func(times uint) (sec time.Duration)
 	//
-	publishTimer *time.Timer
-	exitPublish  chan struct{}
+	exitPublish chan struct{}
 	//
 	trace     bool
 	traceFunc TraceFunc
@@ -80,8 +79,7 @@ func newDefaultProducer(cli *Client) (*Producer, error) {
 		maxRetryTimes:    _defaultMaxRetryTimes,
 		timeIntervalFunc: defaultRetryTimeInterval,
 		//
-		publishTimer: time.NewTimer(0),
-		exitPublish:  make(chan struct{}, 1), // because the consumer of this pipe is not resident, a buffer is needed, otherwise the producer will block.
+		exitPublish: make(chan struct{}, 1), // because the consumer of this pipe is not resident, a buffer is needed, otherwise the producer will block.
 		//
 		trace:     true,
 		traceFunc: defaultTraceFunc,
@@ -216,15 +214,15 @@ func (p *Producer) publish(ctx context.Context, data *amqp.Publishing) (err erro
 
 // getConfirmation receive the response from rabbitmq-server after receiving the push message
 func (p *Producer) getConfirmation() (amqp.Confirmation, error) {
-	p.publishTimer.Reset(defaultMaxWaitConfirmTime)
-	defer p.publishTimer.Stop()
+	timer := time.NewTimer(defaultMaxWaitConfirmTime)
+	defer timer.Stop()
 	select {
 	case _, ok := <-p.exitPublish:
 		if ok {
 			close(p.exitPublish)
 		}
 		return amqp.Confirmation{}, berror.NewClientClose(nil, p.buildLogPrefix()+"client is going to exit")
-	case <-p.publishTimer.C:
+	case <-timer.C:
 		return amqp.Confirmation{}, berror.NewGatewayTimeout(nil, p.buildLogPrefix()+"confirm timeout")
 	case info, ok := <-p.client.confirms:
 		if !ok {
@@ -331,7 +329,6 @@ func (p *Producer) Close() error {
 		return err
 	}
 
-	p.publishTimer.Stop()
 	logger.Infra.Infof(p.buildLogPrefix() + "shutdown success")
 	return nil
 }

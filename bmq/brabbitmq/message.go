@@ -8,8 +8,8 @@ import (
 	amqp "github.com/rabbitmq/amqp091-go"
 )
 
-// BuildTextMsg4Push build a simple rabbitmq-producer-message of text
-func BuildTextMsg4Push(ctx context.Context, body []byte, persistent bool, priorities ...uint8) *amqp.Publishing {
+// BuildTextMsg4Publish build a simple rabbitmq-producer-message of text
+func BuildTextMsg4Publish(ctx context.Context, body []byte, persistent bool, priorities ...uint8) *amqp.Publishing {
 	var (
 		priority     uint8 = 0
 		deliveryMode uint8 = 0

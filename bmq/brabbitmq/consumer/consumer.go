@@ -42,6 +42,9 @@ type Consumer struct {
 	//
 	retryHdr *RetryHandler
 	//
+	trace     bool
+	traceFunc TraceFunc
+	//
 	sync.Mutex
 }
 
@@ -82,6 +85,9 @@ func newDefaultConsumer(cli *Client) *Consumer {
 		//
 		ackFunc:  defaultAck,
 		nackFunc: defaultNack,
+		//
+		trace:     true,
+		traceFunc: defaultTraceFunc,
 	}
 	res.retryHdr = newRetryHandler(res)
 	return res
@@ -137,6 +143,11 @@ func (c *Consumer) SetBatchFetchMessagePeriod(duration time.Duration) *Consumer 
 	return c
 }
 
+func (c *Consumer) DisableTrace() *Consumer {
+	c.trace = false
+	return c
+}
+
 func (c *Consumer) GetID() uint {
 	return c.id
 }
@@ -154,11 +165,22 @@ func (c *Consumer) Work(f Handler) error {
 		return berror.NewInternalError(nil, c.buildLogPrefix()+"the worker is working now")
 	}
 	if len(c.handlerChainReadOnly) == 0 {
+		c.handlerChainReadOnly = append(c.handlerChainReadOnly, c.handlerTrace)
 		c.handlerChainReadOnly = append(c.handlerChainReadOnly, c.handlerChain...)
 		c.handlerChainReadOnly = append(c.handlerChainReadOnly, f)
 	}
 	go c.startWork()
 	return nil
+}
+
+func (c *Consumer) handlerTrace(ctx *Context, ds []*amqp.Delivery, idx uint) error {
+	if c.trace {
+		now := time.Now()
+		err := ctx.Next(ds, idx)
+		c.traceFunc(ctx, err, ds, time.Since(now), idx)
+		return err
+	}
+	return ctx.Next(ds, idx)
 }
 
 func (c *Consumer) startWork() {

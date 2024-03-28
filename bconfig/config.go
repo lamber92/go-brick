@@ -57,7 +57,7 @@ func initFromYAML() {
 }
 
 func initFromApollo() error {
-	basic, err := yaml.NewStatic().Load(context.Background(), "Apollo", Env.GetType().ToString())
+	basic, err := yaml.NewStatic().Load(context.Background(), "Apollo", Env.GetName())
 	if err != nil {
 		return err
 	}

@@ -14,16 +14,20 @@ const (
 
 type defaultLogger struct {
 	logger logger.Logger
+	debug  bool
 }
 
-func newDefaultLogger() log.LoggerInterface {
+func newDefaultLogger(debug bool) log.LoggerInterface {
 	return &defaultLogger{
 		logger: logger.Infra.WithOptions(logger.AddCallerSkip(2)),
+		debug:  debug,
 	}
 }
 
 func (d *defaultLogger) Debugf(format string, params ...interface{}) {
-	d.logger.With(blog.String(moduleKey, moduleName)).Debugf(format, params...)
+	if d.debug {
+		d.logger.With(blog.String(moduleKey, moduleName)).Debugf(format, params...)
+	}
 }
 
 func (d *defaultLogger) Infof(format string, params ...interface{}) {
@@ -39,7 +43,9 @@ func (d *defaultLogger) Errorf(format string, params ...interface{}) {
 }
 
 func (d *defaultLogger) Debug(msg string) {
-	d.logger.With(blog.String(moduleKey, moduleName)).Debug(msg)
+	if d.debug {
+		d.logger.With(blog.String(moduleKey, moduleName)).Debug(msg)
+	}
 }
 
 func (d *defaultLogger) Info(msg string) {

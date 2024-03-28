@@ -165,9 +165,8 @@ func (c *Consumer) Work(f Handler) error {
 		return berror.NewInternalError(nil, c.buildLogPrefix()+"the worker is working now")
 	}
 	if len(c.handlerChainReadOnly) == 0 {
-		c.handlerChainReadOnly = append(c.handlerChainReadOnly, c.handlerTrace)
 		c.handlerChainReadOnly = append(c.handlerChainReadOnly, c.handlerChain...)
-		c.handlerChainReadOnly = append(c.handlerChainReadOnly, f)
+		c.handlerChainReadOnly = append(c.handlerChainReadOnly, c.handlerTrace, f)
 	}
 	go c.startWork()
 	return nil

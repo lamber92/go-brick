@@ -8,9 +8,13 @@ import (
 	"go-brick/bcontext"
 	"go-brick/blog"
 	"go-brick/bmq/brabbitmq"
+	"go-brick/bmq/brabbitmq/consumer"
 	"os"
 	"sync"
 	"testing"
+	"time"
+
+	amqp "github.com/rabbitmq/amqp091-go"
 )
 
 const (
@@ -41,9 +45,6 @@ func TestMain(m *testing.M) {
 }
 
 func TestProducer(t *testing.T) {
-	defer bconfig.Close()
-	defer brabbitmq.Close()
-
 	p, err := brabbitmq.GetProducer(testProducerKey)
 	if err != nil {
 		t.Fatal(err)
@@ -53,7 +54,7 @@ func TestProducer(t *testing.T) {
 		wg       = sync.WaitGroup{}
 		msgCount = 500
 	)
-	wg.Add(500)
+	wg.Add(msgCount)
 	for i := 0; i < msgCount; i++ {
 		ii := i
 		go func() {
@@ -69,8 +70,40 @@ func TestProducer(t *testing.T) {
 		}()
 	}
 	wg.Wait()
+
+	if err = brabbitmq.Close(); err != nil {
+		t.Fatal(err)
+	}
+	bconfig.Close()
 }
 
 func TestConsumer(t *testing.T) {
+	cs, err := brabbitmq.GetConsumer(testConsumerKey)
+	if err != nil {
+		t.Fatal(err)
+	}
 
+	for _, c := range cs {
+		if err2 := c.
+			SetBatchFetchMessageCount(5).
+			Use(func(ctx *consumer.Context, deliveries []*amqp.Delivery, idx uint) error {
+				err2 := ctx.Next(deliveries, idx)
+				blog.Info(ctx, "test messages trace")
+				return err2
+			}).
+			Work(func(ctx *consumer.Context, deliveries []*amqp.Delivery, idx uint) error {
+				t.Log("-----------------------")
+				time.Sleep(time.Second * 5)
+				return nil
+			}); err2 != nil {
+			t.Fatal(err2)
+		}
+	}
+
+	time.Sleep(time.Minute)
+
+	if err = brabbitmq.Close(); err != nil {
+		t.Fatal(err)
+	}
+	bconfig.Close()
 }

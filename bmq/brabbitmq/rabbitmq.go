@@ -139,7 +139,7 @@ func CloseProducer(key string) error {
 }
 
 // Close exit all rabbitmq producers and consumers
-func Close() {
+func Close() error {
 	eg, ctx := berrgroup.WithContext(context.Background())
 	defer ctx.Cancel()
 
@@ -188,5 +188,5 @@ func Close() {
 		producerHub.Delete(key)
 	}
 
-	return
+	return eg.Wait()
 }

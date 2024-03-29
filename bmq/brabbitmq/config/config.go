@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/lamber92/go-brick/bconfig"
+
 	"github.com/lamber92/go-brick/berror"
 	"github.com/spf13/cast"
 )
@@ -71,7 +72,7 @@ type ConsumerConfig struct {
 }
 
 func Load(ctx context.Context, key string, namespace ...string) (*Config, error) {
-	v, err := bconfig.Static.Load(ctx, key, namespace...)
+	v, err := bconfig.Static().Load(ctx, key, namespace...)
 	if err != nil {
 		return nil, berror.Convert(err, buildLogPrefix(key)+"failed to load rabbitmq config")
 	}

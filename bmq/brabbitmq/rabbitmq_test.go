@@ -3,17 +3,17 @@ package brabbitmq_test
 import (
 	"context"
 	"fmt"
-	"go-brick/bconfig"
-	"go-brick/bconfig/bstorage"
-	"go-brick/bcontext"
-	"go-brick/blog"
-	"go-brick/bmq/brabbitmq"
-	"go-brick/bmq/brabbitmq/consumer"
 	"os"
 	"sync"
 	"testing"
 	"time"
 
+	"github.com/lamber92/go-brick/bconfig"
+	"github.com/lamber92/go-brick/bconfig/bstorage"
+	"github.com/lamber92/go-brick/bcontext"
+	"github.com/lamber92/go-brick/blog"
+	"github.com/lamber92/go-brick/bmq/brabbitmq"
+	"github.com/lamber92/go-brick/bmq/brabbitmq/consumer"
 	amqp "github.com/rabbitmq/amqp091-go"
 )
 

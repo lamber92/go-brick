@@ -3,14 +3,15 @@ package brabbitmq
 import (
 	"context"
 	"fmt"
-	"go-brick/berrgroup"
-	"go-brick/berror"
-	"go-brick/blog/logger"
-	"go-brick/bmq/brabbitmq/config"
-	"go-brick/bmq/brabbitmq/consumer"
-	"go-brick/bmq/brabbitmq/producer"
-	"go-brick/bstructure/bset"
 	"sync"
+
+	"github.com/lamber92/go-brick/berrgroup"
+	"github.com/lamber92/go-brick/berror"
+	"github.com/lamber92/go-brick/blog/logger"
+	"github.com/lamber92/go-brick/bmq/brabbitmq/config"
+	"github.com/lamber92/go-brick/bmq/brabbitmq/consumer"
+	"github.com/lamber92/go-brick/bmq/brabbitmq/producer"
+	"github.com/lamber92/go-brick/bstructure/bset"
 )
 
 var (

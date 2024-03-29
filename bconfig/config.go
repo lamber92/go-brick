@@ -14,10 +14,22 @@ import (
 var (
 	_once sync.Once
 
-	Static  bstorage.Config
-	Dynamic bstorage.Config
-	Env     benv.Env
+	_static  bstorage.Config
+	_dynamic bstorage.Config
+	_env     benv.Env
 )
+
+func Static() bstorage.Config {
+	return _static
+}
+
+func Dynamic() bstorage.Config {
+	return _dynamic
+}
+
+func Env() benv.Env {
+	return _env
+}
 
 type Option struct {
 	Type      bstorage.Type
@@ -30,7 +42,7 @@ func Init(opt Option) {
 			err error
 		)
 		// load environment info
-		Env, err = benv.Get()
+		_env, err = benv.Get()
 		if err != nil {
 			panic(err)
 		}
@@ -52,12 +64,12 @@ func Init(opt Option) {
 }
 
 func initFromYAML() {
-	Static = yaml.NewStatic()
-	Dynamic = yaml.NewDynamic()
+	_static = yaml.NewStatic()
+	_dynamic = yaml.NewDynamic()
 }
 
 func initFromApollo() error {
-	basic, err := yaml.NewStatic().Load(context.Background(), "Apollo", Env.GetName())
+	basic, err := yaml.NewStatic().Load(context.Background(), "Apollo", _env.GetName())
 	if err != nil {
 		return err
 	}
@@ -66,21 +78,21 @@ func initFromApollo() error {
 	if err = basic.Unmarshal(conf); err != nil {
 		return err
 	}
-	Dynamic, err = apollo.New(conf)
+	_dynamic, err = apollo.New(conf)
 	if err != nil {
 		return err
 	}
-	Static = Dynamic
+	_static = _dynamic
 
 	return nil
 }
 
 func Close() {
-	switch Static.GetType() {
+	switch _static.GetType() {
 	case bstorage.YAML:
-		Static.Close()
-		Dynamic.Close()
+		_static.Close()
+		_dynamic.Close()
 	case bstorage.APOLLO:
-		Dynamic.Close()
+		_dynamic.Close()
 	}
 }

@@ -2,9 +2,9 @@ package brabbitmq
 
 import (
 	"context"
-	"go-brick/btrace"
 	"time"
 
+	"github.com/lamber92/go-brick/btrace"
 	amqp "github.com/rabbitmq/amqp091-go"
 )
 

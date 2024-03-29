@@ -17,7 +17,7 @@ func TestYamlConfig(t *testing.T) {
 		ConfigDir: "./bstorage/yaml/config_test",
 	})
 	ctx := bcontext.New()
-	v, err := bconfig.Dynamic.Load(ctx, "TestKey.E", "test")
+	v, err := bconfig.Dynamic().Load(ctx, "TestKey.E", "test")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -38,7 +38,7 @@ func TestApolloConfig(t *testing.T) {
 		ConfigDir: "./bstorage/apollo/config_test",
 	})
 	ctx := bcontext.New()
-	v, err := bconfig.Dynamic.Load(ctx, "TestKey", "dev_apollo_config")
+	v, err := bconfig.Dynamic().Load(ctx, "TestKey", "dev_apollo_config")
 	if err != nil {
 		t.Fatal(err)
 	}

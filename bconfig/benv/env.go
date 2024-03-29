@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"strings"
+	"sync"
 
 	"github.com/lamber92/go-brick/berror"
 	"github.com/spf13/viper"
@@ -23,20 +24,31 @@ var (
 	}
 )
 
-type env struct {
-	typ  Type
-	name string // environment name
-	kv   *viper.Viper
+var (
+	_envGetter func() (Env, error)
+	_lock      sync.Mutex
+)
+
+// RegisterEnvGetter register an customized environment getter
+func RegisterEnvGetter(f func() (Env, error)) {
+	_envGetter = f
 }
 
 // Get return environment info
 func Get() (Env, error) {
+	_lock.Lock()
+	defer _lock.Unlock()
+
+	if _envGetter != nil {
+		return _envGetter()
+	}
+
 	name := os.Getenv(_ENV_VAR_KEY_)
 	if len(name) == 0 {
 		return nil, berror.NewNotFound(nil, fmt.Sprintf("cannot find environment variable [%s]", _ENV_VAR_KEY_))
 	}
 
-	res := &env{
+	res := &defaultEnv{
 		name: strings.ToLower(name),
 		kv:   viper.New(),
 	}
@@ -59,15 +71,21 @@ func Get() (Env, error) {
 	return res, nil
 }
 
-func (e *env) GetType() Type {
+type defaultEnv struct {
+	typ  Type
+	name string // environment name
+	kv   *viper.Viper
+}
+
+func (e *defaultEnv) GetType() Type {
 	return e.typ
 }
 
-func (e *env) GetName() string {
+func (e *defaultEnv) GetName() string {
 	return e.name
 }
 
-func (e *env) Get(key string, fromCache ...bool) (string, error) {
+func (e *defaultEnv) Get(key string, fromCache ...bool) (string, error) {
 	if len(fromCache) > 0 && fromCache[0] {
 		if res := e.kv.GetString(key); len(res) > 0 {
 			return res, nil
@@ -83,7 +101,7 @@ func (e *env) Get(key string, fromCache ...bool) (string, error) {
 	return res, nil
 }
 
-func (e *env) AllowDebug() bool {
+func (e *defaultEnv) AllowDebug() bool {
 	_, ok := allowDebugType[e.typ]
 	return ok
 }

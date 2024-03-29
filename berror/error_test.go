@@ -3,11 +3,11 @@ package berror_test
 import (
 	"errors"
 	"fmt"
-	"go-brick/berror"
-	"go-brick/berror/bcode"
-	"go-brick/berror/bstatus"
 	"testing"
 
+	"github.com/lamber92/go-brick/berror"
+	"github.com/lamber92/go-brick/berror/bcode"
+	"github.com/lamber92/go-brick/berror/bstatus"
 	xerrors "github.com/pkg/errors"
 	"github.com/stretchr/testify/assert"
 )

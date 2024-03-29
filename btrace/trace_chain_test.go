@@ -2,10 +2,10 @@ package btrace_test
 
 import (
 	"context"
-	"go-brick/blog"
-	"go-brick/btrace"
 	"testing"
 
+	"github.com/lamber92/go-brick/blog"
+	"github.com/lamber92/go-brick/btrace"
 	"github.com/stretchr/testify/assert"
 )
 

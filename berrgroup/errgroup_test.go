@@ -8,15 +8,16 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"go-brick/bcontext"
-	"go-brick/berrgroup"
-	"go-brick/blog"
-	"go-brick/btrace"
 	"net/http"
 	"os"
 	"sync/atomic"
 	"testing"
 	"time"
+
+	"github.com/lamber92/go-brick/bcontext"
+	"github.com/lamber92/go-brick/berrgroup"
+	"github.com/lamber92/go-brick/blog"
+	"github.com/lamber92/go-brick/btrace"
 )
 
 var (

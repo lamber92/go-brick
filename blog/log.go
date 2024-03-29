@@ -2,7 +2,8 @@ package blog
 
 import (
 	"context"
-	"go-brick/blog/logger"
+
+	"github.com/lamber92/go-brick/blog/logger"
 )
 
 var _biz = logger.Biz.WithOptions(logger.AddCallerSkip(1))

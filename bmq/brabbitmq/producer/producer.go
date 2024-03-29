@@ -2,14 +2,14 @@ package producer
 
 import (
 	"context"
-	"go-brick/berror"
-	"go-brick/berror/bcode"
-	"go-brick/blog/logger"
-	"go-brick/bmq/brabbitmq/config"
 	"strconv"
 	"sync"
 	"time"
 
+	"github.com/lamber92/go-brick/berror"
+	"github.com/lamber92/go-brick/berror/bcode"
+	"github.com/lamber92/go-brick/blog/logger"
+	"github.com/lamber92/go-brick/bmq/brabbitmq/config"
 	amqp "github.com/rabbitmq/amqp091-go"
 )
 

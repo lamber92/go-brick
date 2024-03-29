@@ -1,9 +1,9 @@
 Apollo:
-  Host: "http://www.example.com"
-  AppID: "xxx"
+  Host: "http://localhost:18080"
+  AppID: "go-brick-example"
   Cluster: "dev"
   Namespace: "application"
   IsBackup: true
-  Secret: "yyyyyy"
+  Secret: "7635dbdc38c348079b7ad71cc6c2444c"
   Label: ""
   SyncTimeout: 5

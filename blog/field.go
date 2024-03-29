@@ -1,8 +1,9 @@
 package blog
 
 import (
-	"go-brick/blog/logger"
 	"time"
+
+	"github.com/lamber92/go-brick/blog/logger"
 )
 
 // Binary constructs a field that carries an opaque binary blob.

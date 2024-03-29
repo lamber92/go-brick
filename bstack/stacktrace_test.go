@@ -1,8 +1,9 @@
 package bstack_test
 
 import (
-	"go-brick/bstack"
 	"testing"
+
+	"github.com/lamber92/go-brick/bstack"
 )
 
 func TestTakeStack(t *testing.T) {

@@ -2,9 +2,10 @@ package bstruct_test
 
 import (
 	"fmt"
-	"github.com/stretchr/testify/assert"
-	"go-brick/bstructure/bstruct"
 	"testing"
+
+	"github.com/lamber92/go-brick/bstructure/bstruct"
+	"github.com/stretchr/testify/assert"
 )
 
 type Temp struct {

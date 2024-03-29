@@ -1,10 +1,10 @@
 package bcode_test
 
 import (
-	"go-brick/berror/bcode"
 	"strconv"
 	"testing"
 
+	"github.com/lamber92/go-brick/berror/bcode"
 	"github.com/stretchr/testify/assert"
 )
 

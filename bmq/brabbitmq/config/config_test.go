@@ -2,12 +2,12 @@ package config
 
 import (
 	"context"
-	"go-brick/bconfig"
-	"go-brick/bconfig/bstorage"
 	"os"
 	"testing"
 	"time"
 
+	"github.com/lamber92/go-brick/bconfig"
+	"github.com/lamber92/go-brick/bconfig/bstorage"
 	"github.com/stretchr/testify/assert"
 )
 

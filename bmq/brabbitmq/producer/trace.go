@@ -2,10 +2,10 @@ package producer
 
 import (
 	"context"
-	"go-brick/btrace"
-	"go-brick/internal/bufferpool"
 	"time"
 
+	"github.com/lamber92/go-brick/btrace"
+	"github.com/lamber92/go-brick/internal/bufferpool"
 	amqp "github.com/rabbitmq/amqp091-go"
 	"go.uber.org/zap/zapcore"
 )

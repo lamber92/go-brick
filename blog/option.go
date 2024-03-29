@@ -1,7 +1,7 @@
 package blog
 
 import (
-	"go-brick/blog/logger"
+	"github.com/lamber92/go-brick/blog/logger"
 )
 
 // AddCallerSkip increases the number of callers skipped by caller annotation

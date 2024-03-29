@@ -1,8 +1,8 @@
 package berror
 
 import (
-	"go-brick/berror/bstatus"
-	"go-brick/bstack"
+	"github.com/lamber92/go-brick/berror/bstatus"
+	"github.com/lamber92/go-brick/bstack"
 )
 
 //go:generate protoc --go_out=. --go_opt=paths=source_relative --go-grpc_out=. --go-grpc_opt=paths=source_relative  --proto_path=. grpc_status_detail.proto

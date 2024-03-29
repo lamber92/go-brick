@@ -1,10 +1,9 @@
 package apollo
 
 import (
-	"go-brick/internal/json"
-
 	"github.com/apolloconfig/agollo/v4/storage"
-	"go-brick/bconfig/bstorage"
+	"github.com/lamber92/go-brick/bconfig/bstorage"
+	"github.com/lamber92/go-brick/internal/json"
 )
 
 type defaultListener struct {

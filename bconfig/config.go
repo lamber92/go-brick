@@ -3,12 +3,12 @@ package bconfig
 import (
 	"context"
 	"fmt"
-
-	"go-brick/bconfig/benv"
-	"go-brick/bconfig/bstorage"
-	"go-brick/bconfig/bstorage/apollo"
-	"go-brick/bconfig/bstorage/yaml"
 	"sync"
+
+	"github.com/lamber92/go-brick/bconfig/benv"
+	"github.com/lamber92/go-brick/bconfig/bstorage"
+	"github.com/lamber92/go-brick/bconfig/bstorage/apollo"
+	"github.com/lamber92/go-brick/bconfig/bstorage/yaml"
 )
 
 var (

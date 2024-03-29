@@ -1,12 +1,12 @@
 package benv_test
 
 import (
-	"go-brick/bconfig/benv"
-	"go-brick/berror"
-	"go-brick/berror/bcode"
 	"os"
 	"testing"
 
+	"github.com/lamber92/go-brick/bconfig/benv"
+	"github.com/lamber92/go-brick/berror"
+	"github.com/lamber92/go-brick/berror/bcode"
 	"github.com/stretchr/testify/assert"
 )
 

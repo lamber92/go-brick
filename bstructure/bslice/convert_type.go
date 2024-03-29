@@ -1,7 +1,7 @@
 package bslice
 
 import (
-	"go-brick/btype"
+	"github.com/lamber92/go-brick/btype"
 )
 
 // ToUint64 Unsigned integer slice cast

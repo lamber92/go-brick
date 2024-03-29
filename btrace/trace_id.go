@@ -3,8 +3,8 @@ package btrace
 import (
 	"context"
 	"encoding/hex"
-	"go-brick/bcontext"
 
+	"github.com/lamber92/go-brick/bcontext"
 	uuid "github.com/satori/go.uuid"
 	"github.com/spf13/cast"
 )

@@ -3,7 +3,7 @@ package bstruct
 import (
 	"errors"
 	"fmt"
-	"go-brick/btype"
+	"github.com/lamber92/go-brick/btype"
 	"reflect"
 	"strings"
 )

@@ -1,8 +1,9 @@
 package bslice
 
 import (
-	"go-brick/btype"
 	"sort"
+
+	"github.com/lamber92/go-brick/btype"
 )
 
 // Join concat two slices

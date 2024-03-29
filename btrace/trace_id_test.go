@@ -3,11 +3,11 @@ package btrace_test
 import (
 	"context"
 	"encoding/hex"
-	"go-brick/bcontext"
-	"go-brick/btrace"
 	"strings"
 	"testing"
 
+	"github.com/lamber92/go-brick/bcontext"
+	"github.com/lamber92/go-brick/btrace"
 	uuid "github.com/satori/go.uuid"
 	"github.com/stretchr/testify/assert"
 )

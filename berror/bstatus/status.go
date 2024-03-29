@@ -2,8 +2,8 @@ package bstatus
 
 import (
 	"fmt"
-	"go-brick/berror/bcode"
 
+	"github.com/lamber92/go-brick/berror/bcode"
 	"google.golang.org/grpc/codes"
 )
 

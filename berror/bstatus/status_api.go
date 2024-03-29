@@ -1,6 +1,6 @@
 package bstatus
 
-import "go-brick/berror/bcode"
+import "github.com/lamber92/go-brick/berror/bcode"
 
 // Status Carrier of business error info
 type Status interface {

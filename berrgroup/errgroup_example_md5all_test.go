@@ -8,11 +8,12 @@ import (
 	"context"
 	"crypto/md5"
 	"fmt"
-	"go-brick/berrgroup"
-	"go-brick/blog"
 	"io/ioutil"
 	"os"
 	"path/filepath"
+
+	"github.com/lamber92/go-brick/berrgroup"
+	"github.com/lamber92/go-brick/blog"
 )
 
 // Pipeline demonstrates the use of a Group to implement a multi-stage

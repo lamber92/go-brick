@@ -3,13 +3,13 @@ package producer
 import (
 	"context"
 	"fmt"
-	"go-brick/berror"
-	"go-brick/berror/bcode"
-	"go-brick/bmq/brabbitmq/config"
 	"sync"
 	"testing"
 	"time"
 
+	"github.com/lamber92/go-brick/berror"
+	"github.com/lamber92/go-brick/berror/bcode"
+	"github.com/lamber92/go-brick/bmq/brabbitmq/config"
 	amqp "github.com/rabbitmq/amqp091-go"
 )
 

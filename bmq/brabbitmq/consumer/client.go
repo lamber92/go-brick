@@ -1,11 +1,11 @@
 package consumer
 
 import (
-	"go-brick/berror"
-	"go-brick/blog/logger"
-	"go-brick/bmq/brabbitmq/config"
 	"strconv"
 
+	"github.com/lamber92/go-brick/berror"
+	"github.com/lamber92/go-brick/blog/logger"
+	"github.com/lamber92/go-brick/bmq/brabbitmq/config"
 	amqp "github.com/rabbitmq/amqp091-go"
 )
 

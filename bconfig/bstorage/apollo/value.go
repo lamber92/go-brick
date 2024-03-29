@@ -1,10 +1,10 @@
 package apollo
 
 import (
-	"go-brick/bconfig/bstorage"
-	"go-brick/internal/json"
 	"time"
 
+	"github.com/lamber92/go-brick/bconfig/bstorage"
+	"github.com/lamber92/go-brick/internal/json"
 	"github.com/spf13/cast"
 )
 

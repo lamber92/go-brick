@@ -1,14 +1,13 @@
 package berror_test
 
 import (
-	"go-brick/berror"
-	"go-brick/berror/bcode"
-	"go-brick/berror/bstatus"
 	"testing"
 
-	"gorm.io/gorm"
-
+	"github.com/lamber92/go-brick/berror"
+	"github.com/lamber92/go-brick/berror/bcode"
+	"github.com/lamber92/go-brick/berror/bstatus"
 	"github.com/stretchr/testify/assert"
+	"gorm.io/gorm"
 )
 
 func TestDefaultConverter_Convert(t *testing.T) {

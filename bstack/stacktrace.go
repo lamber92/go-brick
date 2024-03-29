@@ -1,13 +1,13 @@
 package bstack
 
 import (
-	"go-brick/internal/bufferpool"
-	"go-brick/internal/json"
 	"runtime"
 	"strconv"
 	"strings"
 	"sync"
 
+	"github.com/lamber92/go-brick/internal/bufferpool"
+	"github.com/lamber92/go-brick/internal/json"
 	"go.uber.org/zap/zapcore"
 )
 

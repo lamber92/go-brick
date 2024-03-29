@@ -2,11 +2,11 @@ package btrace
 
 import (
 	"context"
-	"go-brick/bcontext"
-	"go-brick/internal/bufferpool"
-	bsync "go-brick/internal/sync"
 	"sync"
 
+	"github.com/lamber92/go-brick/bcontext"
+	"github.com/lamber92/go-brick/internal/bufferpool"
+	bsync "github.com/lamber92/go-brick/internal/sync"
 	"go.uber.org/zap/zapcore"
 )
 

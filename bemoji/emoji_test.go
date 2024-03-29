@@ -1,9 +1,9 @@
 package bemoji_test
 
 import (
-	"go-brick/bemoji"
 	"testing"
 
+	"github.com/lamber92/go-brick/bemoji"
 	"github.com/stretchr/testify/assert"
 )
 

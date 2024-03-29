@@ -1,13 +1,13 @@
 package bconfig_test
 
 import (
-	"go-brick/bconfig"
-	"go-brick/bconfig/bstorage"
-	"go-brick/bcontext"
-	"go-brick/btrace"
 	"os"
 	"testing"
 
+	"github.com/lamber92/go-brick/bconfig"
+	"github.com/lamber92/go-brick/bconfig/bstorage"
+	"github.com/lamber92/go-brick/bcontext"
+	"github.com/lamber92/go-brick/btrace"
 	"github.com/stretchr/testify/assert"
 )
 

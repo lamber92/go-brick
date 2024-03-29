@@ -1,10 +1,9 @@
 package apollo
 
 import (
-	"go-brick/blog"
-	"go-brick/blog/logger"
-
 	"github.com/apolloconfig/agollo/v4/component/log"
+	"github.com/lamber92/go-brick/blog"
+	"github.com/lamber92/go-brick/blog/logger"
 )
 
 const (

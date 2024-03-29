@@ -2,11 +2,12 @@ package consumer
 
 import (
 	"errors"
-	"go-brick/berror"
-	"go-brick/blog/logger"
 	"net"
 	"strings"
 	"time"
+
+	"github.com/lamber92/go-brick/berror"
+	"github.com/lamber92/go-brick/blog/logger"
 )
 
 const _defaultMaxRetryTimes = 5

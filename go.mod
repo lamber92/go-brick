@@ -1,8 +1,6 @@
-module go-brick
+module github.com/lamber92/go-brick
 
 go 1.19
-
-//replace github.com/apolloconfig/agollo/v4 => D:\GitHub\agollo
 
 replace github.com/apolloconfig/agollo/v4 => github.com/lamber92/agollo/v4 v4.3.2
 

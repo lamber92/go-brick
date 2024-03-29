@@ -1,11 +1,11 @@
 package bset_test
 
 import (
-	"go-brick/bstructure/bset"
-	"go-brick/bstructure/bslice"
 	"testing"
 	"unsafe"
 
+	"github.com/lamber92/go-brick/bstructure/bset"
+	"github.com/lamber92/go-brick/bstructure/bslice"
 	"github.com/stretchr/testify/assert"
 )
 

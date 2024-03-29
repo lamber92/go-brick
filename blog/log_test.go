@@ -2,11 +2,12 @@ package blog_test
 
 import (
 	"errors"
-	"go-brick/bcontext"
-	"go-brick/berror"
-	"go-brick/blog"
-	"go-brick/btrace"
 	"testing"
+
+	"github.com/lamber92/go-brick/bcontext"
+	"github.com/lamber92/go-brick/berror"
+	"github.com/lamber92/go-brick/blog"
+	"github.com/lamber92/go-brick/btrace"
 )
 
 func TestLog(t *testing.T) {

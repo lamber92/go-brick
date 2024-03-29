@@ -2,13 +2,14 @@ package apollo_test
 
 import (
 	"context"
-	"go-brick/bconfig/bstorage/apollo"
-	"go-brick/bconfig/bstorage/yaml"
-	"go-brick/berror"
-	"go-brick/berror/bcode"
 	"sync"
 	"testing"
 	"time"
+
+	"github.com/lamber92/go-brick/bconfig/bstorage/apollo"
+	"github.com/lamber92/go-brick/bconfig/bstorage/yaml"
+	"github.com/lamber92/go-brick/berror"
+	"github.com/lamber92/go-brick/berror/bcode"
 )
 
 func TestLoadDefaultNSConfig(t *testing.T) {

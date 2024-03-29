@@ -1,6 +1,6 @@
 package bemoji
 
-import "go-brick/bemoji/official"
+import "github.com/lamber92/go-brick/bemoji/official"
 
 // HasEmoji Check if emoji exists in the string
 func HasEmoji(s string) bool {

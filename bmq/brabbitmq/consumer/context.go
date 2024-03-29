@@ -2,10 +2,10 @@ package consumer
 
 import (
 	"fmt"
-	"go-brick/bcontext"
-	"go-brick/berror"
-	"go-brick/blog/logger"
 
+	"github.com/lamber92/go-brick/bcontext"
+	"github.com/lamber92/go-brick/berror"
+	"github.com/lamber92/go-brick/blog/logger"
 	amqp "github.com/rabbitmq/amqp091-go"
 )
 

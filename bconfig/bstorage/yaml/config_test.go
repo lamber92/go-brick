@@ -1,14 +1,14 @@
 package yaml_test
 
 import (
-	"go-brick/bconfig/bstorage/yaml"
-	"go-brick/bcontext"
-	"go-brick/btrace"
 	"os"
 	"strings"
 	"testing"
 	"time"
 
+	"github.com/lamber92/go-brick/bconfig/bstorage/yaml"
+	"github.com/lamber92/go-brick/bcontext"
+	"github.com/lamber92/go-brick/btrace"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -16,9 +16,9 @@ func TestNewStatic_GetFromKey(t *testing.T) {
 	yaml.InitRootDir("./config_test")
 	ctx := bcontext.New()
 	static := yaml.NewStatic()
-	v, err := static.Load(ctx, "TestKey", "test")
+	v, err := static.Load(ctx, "TestKey", "fat")
 	// double get from cache
-	v, err = static.Load(ctx, "TestKey", "test")
+	v, err = static.Load(ctx, "TestKey", "fat")
 
 	assert.Equal(t, nil, err)
 
@@ -41,7 +41,7 @@ func TestNewStatic_ParseToStruct(t *testing.T) {
 	yaml.InitRootDir("./config_test")
 	ctx := bcontext.New()
 	static := yaml.NewStatic()
-	v, err := static.Load(ctx, "TestKey", "test")
+	v, err := static.Load(ctx, "TestKey", "fat")
 
 	type TestKey struct {
 		Axx string        `mapstructure:"A"`
@@ -70,7 +70,7 @@ func TestNewStatic_ParseMultiLayer(t *testing.T) {
 	yaml.InitRootDir("./config_test")
 	ctx := bcontext.New()
 	static := yaml.NewStatic()
-	v, err := static.Load(ctx, "TestKey.E", "test")
+	v, err := static.Load(ctx, "TestKey.E", "fat")
 
 	type TestKeyE struct {
 		E1xx string `mapstructure:"E1"`
@@ -88,7 +88,7 @@ func TestNewStatic_GetTraceMD(t *testing.T) {
 	yaml.InitRootDir("./config_test")
 	ctx := bcontext.New()
 	static := yaml.NewStatic()
-	_, _ = static.Load(ctx, "TestKey.E", "test")
+	_, _ = static.Load(ctx, "TestKey.E", "fat")
 
 	trace, ok := btrace.GetMDFromCtx(ctx)
 	assert.Equal(t, true, ok)
@@ -99,7 +99,7 @@ func TestNewDynamic(t *testing.T) {
 	yaml.InitRootDir("./config_test")
 	ctx := bcontext.New()
 	dynamic := yaml.NewDynamic()
-	v, err := dynamic.Load(ctx, "TestKey.E", "test")
+	v, err := dynamic.Load(ctx, "TestKey.E", "fat")
 	assert.Equal(t, nil, err)
 
 	var (
@@ -124,7 +124,7 @@ func TestNewDynamic(t *testing.T) {
 	// change E1 value
 	modifyConfig(iii, kkk)
 	time.Sleep(time.Second)
-	v, err = dynamic.Load(ctx, "TestKey.E", "test")
+	v, err = dynamic.Load(ctx, "TestKey.E", "fat")
 	// check E1 value is changed or not
 	assert.Equal(t, nil, err)
 	newValue := v.GetString("E1")
@@ -133,7 +133,7 @@ func TestNewDynamic(t *testing.T) {
 	// restore E1 value
 	modifyConfig(kkk, iii)
 	time.Sleep(time.Second)
-	v, err = dynamic.Load(ctx, "TestKey.E", "test")
+	v, err = dynamic.Load(ctx, "TestKey.E", "fat")
 	// check E1 value is restored or not
 	assert.Equal(t, nil, err)
 	newValue2 := v.GetString("E1")

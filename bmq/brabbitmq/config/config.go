@@ -3,10 +3,10 @@ package config
 import (
 	"context"
 	"fmt"
-	"go-brick/bconfig"
-	"go-brick/berror"
 	"time"
 
+	"github.com/lamber92/go-brick/bconfig"
+	"github.com/lamber92/go-brick/berror"
 	"github.com/spf13/cast"
 )
 

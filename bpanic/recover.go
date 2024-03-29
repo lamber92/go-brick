@@ -3,13 +3,14 @@ package bpanic
 import (
 	"errors"
 	"fmt"
-	"go-brick/berror"
-	"go-brick/berror/bcode"
-	"go-brick/berror/bstatus"
-	"go-brick/blog/logger"
 	"net"
 	"os"
 	"strings"
+
+	"github.com/lamber92/go-brick/berror"
+	"github.com/lamber92/go-brick/berror/bcode"
+	"github.com/lamber92/go-brick/berror/bstatus"
+	"github.com/lamber92/go-brick/blog/logger"
 )
 
 const recoverReason = "recover"

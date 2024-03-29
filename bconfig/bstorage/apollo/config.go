@@ -4,15 +4,15 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"go-brick/bconfig/bstorage"
-	"go-brick/berror"
-	"go-brick/btrace"
 	"sync"
 
 	"github.com/apolloconfig/agollo/v4"
 	"github.com/apolloconfig/agollo/v4/component/log"
 	"github.com/apolloconfig/agollo/v4/env/config"
 	"github.com/apolloconfig/agollo/v4/perror"
+	"github.com/lamber92/go-brick/bconfig/bstorage"
+	"github.com/lamber92/go-brick/berror"
+	"github.com/lamber92/go-brick/btrace"
 )
 
 const (

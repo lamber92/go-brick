@@ -2,10 +2,10 @@ package bcontext_test
 
 import (
 	"context"
-	"go-brick/bcontext"
 	"testing"
 	"time"
 
+	"github.com/lamber92/go-brick/bcontext"
 	"github.com/stretchr/testify/assert"
 )
 

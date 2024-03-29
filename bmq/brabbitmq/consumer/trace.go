@@ -1,11 +1,11 @@
 package consumer
 
 import (
-	"go-brick/btrace"
-	"go-brick/internal/bufferpool"
-	"go-brick/internal/json"
 	"time"
 
+	"github.com/lamber92/go-brick/btrace"
+	"github.com/lamber92/go-brick/internal/bufferpool"
+	"github.com/lamber92/go-brick/internal/json"
 	amqp "github.com/rabbitmq/amqp091-go"
 	"go.uber.org/zap/zapcore"
 )

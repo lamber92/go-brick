@@ -2,10 +2,11 @@ package benv
 
 import (
 	"fmt"
-	"github.com/spf13/viper"
-	"go-brick/berror"
 	"os"
 	"strings"
+
+	"github.com/lamber92/go-brick/berror"
+	"github.com/spf13/viper"
 )
 
 const (

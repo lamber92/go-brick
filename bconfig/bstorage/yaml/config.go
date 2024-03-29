@@ -3,15 +3,15 @@ package yaml
 import (
 	"context"
 	"fmt"
-	"go-brick/bconfig/bstorage"
-	"go-brick/berror"
-	"go-brick/blog/logger"
-	"go-brick/btrace"
-	"go-brick/internal/bufferpool"
-	bsync "go-brick/internal/sync"
 	"sync"
 
 	"github.com/fsnotify/fsnotify"
+	"github.com/lamber92/go-brick/bconfig/bstorage"
+	"github.com/lamber92/go-brick/berror"
+	"github.com/lamber92/go-brick/blog/logger"
+	"github.com/lamber92/go-brick/btrace"
+	"github.com/lamber92/go-brick/internal/bufferpool"
+	bsync "github.com/lamber92/go-brick/internal/sync"
 	"github.com/spf13/viper"
 )
 

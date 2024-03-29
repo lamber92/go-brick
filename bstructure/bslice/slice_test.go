@@ -1,9 +1,9 @@
 package bslice_test
 
 import (
-	"go-brick/bstructure/bslice"
 	"testing"
 
+	"github.com/lamber92/go-brick/bstructure/bslice"
 	"github.com/stretchr/testify/assert"
 )
 

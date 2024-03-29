@@ -3,11 +3,11 @@ package logger
 import (
 	"context"
 	"fmt"
-	"go-brick/berror"
-	"go-brick/blog/config"
-	"go-brick/bstack"
-	"go-brick/btrace"
 
+	"github.com/lamber92/go-brick/berror"
+	"github.com/lamber92/go-brick/blog/config"
+	"github.com/lamber92/go-brick/bstack"
+	"github.com/lamber92/go-brick/btrace"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 )

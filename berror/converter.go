@@ -1,11 +1,11 @@
 package berror
 
 import (
-	"go-brick/berror/bcode"
-	"go-brick/berror/bstatus"
 	"sync"
 
 	"github.com/go-redis/redis/v8"
+	"github.com/lamber92/go-brick/berror/bcode"
+	"github.com/lamber92/go-brick/berror/bstatus"
 	"google.golang.org/grpc/status"
 	"gorm.io/gorm"
 )

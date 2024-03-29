@@ -2,11 +2,11 @@ package berror
 
 import (
 	"errors"
-	"go-brick/berror/bcode"
-	"go-brick/berror/bstatus"
-	"go-brick/bstack"
 
 	jsoniter "github.com/json-iterator/go"
+	"github.com/lamber92/go-brick/berror/bcode"
+	"github.com/lamber92/go-brick/berror/bstatus"
+	"github.com/lamber92/go-brick/bstack"
 	"go.uber.org/zap/zapcore"
 )
 

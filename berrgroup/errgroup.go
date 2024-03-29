@@ -9,9 +9,10 @@ package berrgroup
 import (
 	"context"
 	"fmt"
-	"go-brick/bcontext"
-	"go-brick/bpanic"
 	"sync"
+
+	"github.com/lamber92/go-brick/bcontext"
+	"github.com/lamber92/go-brick/bpanic"
 )
 
 type token struct{}

@@ -1,15 +1,15 @@
 package consumer
 
 import (
-	"go-brick/berror"
-	"go-brick/berror/bstatus"
-	"go-brick/blog/logger"
-	"go-brick/bmq/brabbitmq/config"
 	"strconv"
 	"sync"
 	"sync/atomic"
 	"time"
 
+	"github.com/lamber92/go-brick/berror"
+	"github.com/lamber92/go-brick/berror/bstatus"
+	"github.com/lamber92/go-brick/blog/logger"
+	"github.com/lamber92/go-brick/bmq/brabbitmq/config"
 	amqp "github.com/rabbitmq/amqp091-go"
 )
 

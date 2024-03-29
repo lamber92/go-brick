@@ -1,0 +1,22 @@
+RabbitMQ:
+  PublishSMS:
+    Url: "amqp://root:123456@localhost:5672/"
+    VHost: "test"
+    Type: "producer"
+    Extra:
+      Queue: "test_queue_1"
+      Exchange: "e.direct.test"
+      ExchangeType: "direct"
+      RoutingKey: "test_rabbitmq_producer_key_1"
+      Persistent: true
+  SubscribeSMS:
+    Url: "amqp://root:123456@localhost:5672/"
+    VHost: "test"
+    Type: "consumer"
+    Extra:
+      Queue: "test_queue_1"
+      Consumer: "Consumer.SubscribeSMS.1"
+      Exchange: "e.direct.test"
+      ExchangeType: "direct"
+      BindingKey: "test_rabbitmq_producer_key_1"
+      PrefetchCount: 10

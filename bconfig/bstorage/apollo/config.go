@@ -28,6 +28,7 @@ type Config struct {
 	Secret      string
 	Label       string
 	SyncTimeout int
+	Debug       bool
 }
 
 type apolloConfig struct {
@@ -36,7 +37,7 @@ type apolloConfig struct {
 }
 
 func New(conf *Config, logger ...log.LoggerInterface) (bstorage.Config, error) {
-	lgr := newDefaultLogger()
+	lgr := newDefaultLogger(conf.Debug)
 	if len(logger) > 0 {
 		lgr = logger[0]
 	}

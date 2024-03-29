@@ -51,10 +51,15 @@ func (d *defaultLogger) WithContext(ctx context.Context) Logger {
 	if ctx == nil {
 		return d
 	}
+	tmp := d.engine.With(zap.String("trace_id", btrace.GetTraceID(ctx)))
+	traceChain, ok := btrace.GetMDFromCtx(ctx)
+	if ok {
+		tmp = tmp.With(zap.Array("trace", traceChain.Get()))
+	}
 	// A new pointer object must be used to store the engine
 	// to prevent polluting the original engine
 	return &defaultLogger{
-		engine: d.engine.With(zap.String("trace_id", btrace.GetTraceID(ctx))),
+		engine: tmp,
 	}
 }
 

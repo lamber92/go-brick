@@ -53,11 +53,11 @@ func (g *Group) handleError(err error) {
 // The derived Context is canceled the first time a function passed to Go
 // returns a non-nil error or the first time Wait returns, whichever occurs
 // first.
-func WithContext(ctx context.Context) (*Group, context.Context) {
-	switch tmp := ctx.(type) {
+func WithContext(ctx context.Context) (*Group, bcontext.Context) {
+	switch inner := ctx.(type) {
 	case bcontext.Context:
-		tmp.WithCancel()
-		return &Group{ctx: tmp}, ctx
+		inner.WithCancel()
+		return &Group{ctx: inner}, inner
 	default:
 		newCtx := bcontext.NewWithCtx(ctx)
 		newCtx.WithCancel()
